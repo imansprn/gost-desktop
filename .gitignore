@@ -17,3 +17,23 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+
+# Local databases and dev artifacts
+*.db
+composeApp/*.db
+
+# Log dumps (optional local debugging)
+*.log
+
+# Gradle / IntelliJ / Kotlin
+out/
+
+# Compose Desktop packaging output (always generated)
+composeApp/build/compose/
+composeApp/.compose/
+
+# Local template/config folders (runtime data)
+.gost-manager/
+
+# Local scratch/debug artifacts
+build_error.txt
