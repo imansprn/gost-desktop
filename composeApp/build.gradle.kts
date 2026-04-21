@@ -79,7 +79,8 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "xyz.gobliggg.gost"
+            packageName = "GOST Desktop"
+            vendor = "gobliggg"
             // Allow CI/workflows to set version from git tag: -PappVersion=1.2.3
             val rawAppVersion = (project.findProperty("appVersion") as? String)
                 ?.trim()
