@@ -1,4 +1,5 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.compose.desktop.application.dsl.TargetArch
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -94,6 +95,7 @@ compose.desktop {
             macOS {
                 iconFile.set(project.file("icons/gost.icns"))
                 dockName = "GOST Desktop"
+                targetArchs = listOf(TargetArch.X64, TargetArch.Arm64)
             }
             windows {
                 packageVersion = distributionVersion

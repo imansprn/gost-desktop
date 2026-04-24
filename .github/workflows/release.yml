@@ -64,7 +64,7 @@ jobs:
         if: matrix.is_universal
         env:
           JAVA_HOME: ${{ steps.setup-java-arm64.outputs.path }}
-        run: ./gradlew clean :composeApp:createDistributable "-PappVersion=${{ steps.ver.outputs.version }}" --no-daemon
+        run: ./gradlew clean :composeApp:createDistributable -Pcompose.desktop.targetArch=arm64 "-PappVersion=${{ steps.ver.outputs.version }}" --no-daemon
 
       - name: Verify and Store ARM64 App
         if: matrix.is_universal
@@ -90,7 +90,7 @@ jobs:
         if: matrix.is_universal
         env:
           JAVA_HOME: ${{ steps.setup-java-x64.outputs.path }}
-        run: arch -x86_64 ./gradlew clean :composeApp:createDistributable "-PappVersion=${{ steps.ver.outputs.version }}" --no-daemon
+        run: arch -x86_64 ./gradlew clean :composeApp:createDistributable -Pcompose.desktop.targetArch=x64 "-PappVersion=${{ steps.ver.outputs.version }}" --no-daemon
 
       - name: Verify and Store x64 App
         if: matrix.is_universal
