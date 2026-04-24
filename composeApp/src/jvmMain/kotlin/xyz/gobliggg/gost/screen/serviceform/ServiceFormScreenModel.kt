@@ -410,6 +410,15 @@ class ServiceFormScreenModel(
             
             val path = ConfigBuilder.buildServiceConfig(id, configContent)
             
+            // If we are editing, stop the old process and handle renames
+            if (editName != null) {
+                ProcessManager.stopService(editName)
+                if (editName != id) {
+                    ServiceRegistry.removeService(editName)
+                    ConfigBuilder.deleteServiceConfig(editName)
+                }
+            }
+            
             ServiceRegistry.addOrUpdateService(ServiceEntity(
                 id = id,
                 name = id,

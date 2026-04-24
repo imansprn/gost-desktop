@@ -1,5 +1,9 @@
 # GOST Desktop
 
+[![Release](https://img.shields.io/github/v/release/imansprn/gost-desktop?style=flat-square)](https://github.com/imansprn/gost-desktop/releases)
+[![License](https://img.shields.io/github/license/imansprn/gost-desktop?style=flat-square)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue?style=flat-square)](#)
+
 Desktop application for managing a **[GOST](https://github.com/go-gost/gost)** instance through its HTTP API. This project is an **independent community client**; it is not affiliated with or endorsed by the upstream GOST maintainers unless they say otherwise.
 
 ## Features
@@ -7,6 +11,16 @@ Desktop application for managing a **[GOST](https://github.com/go-gost/gost)** i
 - Connect to a GOST API with saved profiles and optional HTTP Basic credentials (passwords stored encrypted locally).
 - Dashboard, services, chains, authers, advanced objects, metrics, logs placeholder, raw configuration editor, and settings.
 - Material 3–style UI built with [Compose Multiplatform](https://www.jetbrains.com/compose-multiplatform/) for desktop (JVM).
+
+## Preview
+
+| 1. Setup & Connection | 2. Dashboard Overview | 3. Tunnels Management |
+| :---: | :---: | :---: |
+| ![Setup](./assets/screenshots/setup.png) | ![Dashboard](./assets/screenshots/dashboard.png) | ![Tunnels](./assets/screenshots/tunnels.png) |
+
+| 4. Advanced Objects | 5. Real-time Logs | 6. Application Settings |
+| :---: | :---: | :---: |
+| ![Advanced](./assets/screenshots/advance.png) | ![Logs](./assets/screenshots/logs.png) | ![Settings](./assets/screenshots/settings.png) |
 
 ## Requirements
 
