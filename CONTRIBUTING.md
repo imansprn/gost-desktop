@@ -1,4 +1,4 @@
-# Contributing to GOST Manager
+# Contributing to GOST Desktop
 
 Thank you for your interest in improving this project.
 

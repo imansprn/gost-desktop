@@ -73,7 +73,7 @@ compose.desktop {
 
         // macOS only: custom Dock icon when running from Gradle / IDE (packaged .app uses macOS.iconFile).
         if (System.getProperty("os.name").orEmpty().lowercase().contains("mac")) {
-            jvmArgs += "-Xdock:name=GOST Manager"
+            jvmArgs += "-Xdock:name=GOST Desktop"
             jvmArgs += "-Xdock:icon=${project.file("icons/gost.png").absolutePath}"
         }
 
@@ -93,7 +93,7 @@ compose.desktop {
             }
             macOS {
                 iconFile.set(project.file("icons/gost.icns"))
-                dockName = "GOST Manager"
+                dockName = "GOST Desktop"
             }
             windows {
                 packageVersion = distributionVersion

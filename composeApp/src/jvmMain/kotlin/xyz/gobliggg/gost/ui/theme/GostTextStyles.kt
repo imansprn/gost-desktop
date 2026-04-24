@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * Copyright 2026 GOST Manager contributors
+ * Copyright 2026 GOST Desktop contributors
  */
 package xyz.gobliggg.gost.ui.theme
 

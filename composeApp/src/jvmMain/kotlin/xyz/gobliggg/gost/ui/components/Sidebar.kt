@@ -38,7 +38,7 @@ data class SidebarItem(
 )
 
 /**
- * Sidebar navigation for the GOST Manager app shell.
+ * Sidebar navigation for the GOST Desktop app shell.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -82,7 +82,7 @@ fun Sidebar(
         ) {
             Image(
                 painter = gostLogoPainter(),
-                contentDescription = "GOST Manager",
+                contentDescription = "GOST Desktop",
                 modifier = Modifier
                     .size(logoSize)
                     .clip(CircleShape),
@@ -93,7 +93,7 @@ fun Sidebar(
                 Spacer(Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = "GOST Wrapper",
+                        text = "GOST Desktop",
                         color = shellTextPrimary,
                         fontSize = 15.sp, // Slightly larger
                         fontWeight = FontWeight.Bold,

@@ -51,7 +51,7 @@ class ConnectionScreen(
             ) {
                 SaaSScreenHeader(
                     superTitle = "SETUP",
-                    title = "GOST Manager Setup",
+                    title = "GOST Desktop Setup",
                     subtitle = "Configure your local GOST runtime",
                     leading = {
                         Box(
@@ -138,7 +138,7 @@ class ConnectionScreen(
                         onValueChange = model::updateWorkingDirectory,
                         placeholder = {
                             Text(
-                                "~/.gost-manager",
+                                "~/.gost-desktop",
                                 color = MaterialTheme.colorScheme.outline,
                                 style = MaterialTheme.typography.bodyMedium,
                             )

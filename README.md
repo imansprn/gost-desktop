@@ -1,4 +1,4 @@
-# GOST Manager
+# GOST Desktop
 
 Desktop application for managing a **[GOST](https://github.com/go-gost/gost)** instance through its HTTP API. This project is an **independent community client**; it is not affiliated with or endorsed by the upstream GOST maintainers unless they say otherwise.
 

@@ -6,14 +6,14 @@ import kotlinx.coroutines.flow.asStateFlow
 
 /** Reactive window title for [xyz.gobliggg.gost.main]. */
 object WindowTitleState {
-    private val _title = MutableStateFlow("GOST Manager")
+    private val _title = MutableStateFlow("GOST Desktop")
     val title: StateFlow<String> = _title.asStateFlow()
 
     fun update(connected: Boolean, profileName: String?) {
         _title.value = when {
-            !connected -> "GOST Manager"
-            !profileName.isNullOrBlank() -> "GOST Manager — $profileName"
-            else -> "GOST Manager"
+            !connected -> "GOST Desktop"
+            !profileName.isNullOrBlank() -> "GOST Desktop — $profileName"
+            else -> "GOST Desktop"
         }
     }
 }
