@@ -14,19 +14,14 @@ permissions:
 
 jobs:
   build:
-    name: Build ${{ matrix.os }}
+    name: Build ${{ matrix.artifact_name }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: macos-13
-            task: :composeApp:packageDmg
-            artifact_glob: composeApp/build/compose/binaries/main/dmg/*.dmg
-            artifact_name: macos-intel
-          - os: macos-14
-            task: :composeApp:packageDmg
-            artifact_glob: composeApp/build/compose/binaries/main/dmg/*.dmg
-            artifact_name: macos-arm64
+          - os: macos-latest
+            artifact_name: macos
+            is_universal: true
           - os: windows-latest
             task: :composeApp:packageMsi
             artifact_glob: composeApp/build/compose/binaries/main/msi/*.msi
@@ -39,15 +34,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-
       - name: Extract version from tag
         id: ver
         shell: bash
@@ -62,25 +48,9 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION_3" >> "$GITHUB_OUTPUT"
 
-      # Use bash on all OSes: PowerShell splits -PappVersion=2.0.4 into -PappVersion=2 and task ".0.4".
-      - name: Build distribution
-        shell: bash
-        run: ./gradlew ${{ matrix.task }} "-PappVersion=${{ steps.ver.outputs.version }}" --no-daemon
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.artifact_glob }}
-          if-no-files-found: error
-
-  build-macos-universal:
-    name: Build macOS Universal
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-
+      # ── macOS (ARM64 + x64 → lipo) ──
       - name: Set up JDK 21 (ARM64)
+        if: matrix.is_universal
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -90,14 +60,17 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build ARM64
-        run: ./gradlew :composeApp:createDistributable
+        if: matrix.is_universal
+        run: ./gradlew :composeApp:createDistributable "-PappVersion=${{ steps.ver.outputs.version }}" --no-daemon
 
       - name: Store ARM64 App
+        if: matrix.is_universal
         run: |
           mkdir -p build/arch/arm64
           cp -R composeApp/build/compose/binaries/main/app/*.app build/arch/arm64/
 
       - name: Set up JDK 21 (x64)
+        if: matrix.is_universal
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -105,28 +78,17 @@ jobs:
           architecture: x64
 
       - name: Build x64
-        run: ./gradlew :composeApp:createDistributable
+        if: matrix.is_universal
+        run: ./gradlew :composeApp:createDistributable "-PappVersion=${{ steps.ver.outputs.version }}" --no-daemon
 
       - name: Store x64 App
+        if: matrix.is_universal
         run: |
           mkdir -p build/arch/x64
           cp -R composeApp/build/compose/binaries/main/app/*.app build/arch/x64/
 
-      - name: Extract version from tag
-        id: ver
-        shell: bash
-        run: |
-          TAG="${GITHUB_REF_NAME}"
-          VERSION_RAW="${TAG#v}"
-          IFS='.' read -r V1 V2 V3 EXTRA <<< "$VERSION_RAW"
-          V1="${V1:-0}"
-          V2="${V2:-0}"
-          V3="${V3:-0}"
-          VERSION_3="${V1}.${V2}.${V3}"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION_3" >> "$GITHUB_OUTPUT"
-
       - name: Create Universal Binary
+        if: matrix.is_universal
         run: |
           mkdir -p build/arch/universal
           cp -R build/arch/arm64/*.app build/arch/universal/
@@ -137,27 +99,48 @@ jobs:
             build/arch/x64/"$APP_NAME"/Contents/MacOS/"$EXE_NAME" \
             build/arch/arm64/"$APP_NAME"/Contents/MacOS/"$EXE_NAME" \
             -output build/arch/universal/"$APP_NAME"/Contents/MacOS/"$EXE_NAME"
-          
-          # Verify
           lipo -info build/arch/universal/"$APP_NAME"/Contents/MacOS/"$EXE_NAME"
 
       - name: Create DMG
+        if: matrix.is_universal
         run: |
           APP_PATH=$(find build/arch/universal -name "*.app" -maxdepth 1)
           APP_NAME=$(basename "$APP_PATH")
-          DMG_NAME="GOST-Desktop-Universal-${{ steps.ver.outputs.version }}.dmg"
+          DMG_NAME="GOST-Desktop-${{ steps.ver.outputs.version }}-macOS.dmg"
           hdiutil create -volname "$APP_NAME" -srcfolder build/arch/universal -ov -format UDZO "$DMG_NAME"
           echo "dmg_name=$DMG_NAME" >> $GITHUB_ENV
 
-      - name: Upload Universal DMG
+      - name: Upload macOS
+        if: matrix.is_universal
         uses: actions/upload-artifact@v4
         with:
-          name: macos-universal
+          name: macos
           path: ${{ env.dmg_name }}
+
+      # ── Windows / Linux (simple single-task build) ──
+      - name: Set up JDK 21
+        if: ${{ !matrix.is_universal }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Build distribution
+        if: ${{ !matrix.is_universal }}
+        shell: bash
+        run: ./gradlew ${{ matrix.task }} "-PappVersion=${{ steps.ver.outputs.version }}" --no-daemon
+
+      - name: Upload artifact
+        if: ${{ !matrix.is_universal }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_glob }}
+          if-no-files-found: error
 
   release:
     name: Publish GitHub Release
-    needs: [build, build-macos-universal]
+    needs: [build]
     runs-on: ubuntu-latest
     steps:
       - name: Extract version from tag
@@ -187,4 +170,3 @@ jobs:
           generate_release_notes: true
           files: |
             dist/**/*
-
