@@ -25,7 +25,7 @@ import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import xyz.gobliggg.gost.ui.components.ChainFormDialog
-import xyz.gobliggg.gost.ui.components.FormField
+
 import xyz.gobliggg.gost.ui.components.SearchableStringDropdown
 import xyz.gobliggg.gost.ui.theme.Spacing
 import xyz.gobliggg.gost.ui.theme.*
@@ -224,22 +224,22 @@ private fun StepIndicator(
 
 @Composable
 private fun Step1Basic(state: ServiceFormUiState, model: ServiceFormScreenModel) {
-    FormField(
-        "Tunnel Name *",
-        state.name,
-        model::updateName,
-        error = state.nameError,
+    SaaSTextField(
+        value = state.name,
+        onValueChange = model::updateName,
+        label = "Tunnel Name *",
         placeholder = "my-proxy",
-        helperText = "Unique identifier, no spaces allowed",
+        isError = state.nameError != null,
+        helperText = state.nameError ?: "Unique identifier, no spaces allowed",
     )
     Spacer(Modifier.height(16.dp))
-    FormField(
-        "Listen Address *",
-        state.addr,
-        model::updateAddr,
-        error = state.addrError,
+    SaaSTextField(
+        value = state.addr,
+        onValueChange = model::updateAddr,
+        label = "Listen Address *",
         placeholder = ":8080 or 0.0.0.0:1080",
-        helperText = "Use :PORT to listen on all interfaces, or HOST:PORT for a specific bind address",
+        isError = state.addrError != null,
+        helperText = state.addrError ?: "Use :PORT to listen on all interfaces, or HOST:PORT for a specific bind address",
     )
 }
 

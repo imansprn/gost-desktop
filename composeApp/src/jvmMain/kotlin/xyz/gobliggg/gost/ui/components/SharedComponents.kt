@@ -48,7 +48,7 @@ fun StatCard(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(GostRadius.lg))
-            .background(SaASSlate.copy(alpha = 0.4f))
+            .background(sc.surfaceCard)
             .border(1.dp, sc.borderSubtle, RoundedCornerShape(GostRadius.lg))
             .padding(Spacing.statCardInner),
     ) {
@@ -62,8 +62,7 @@ fun StatCard(
         Text(
             text = value,
             color = color,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
+            style = GostTextStyles.statValue,
         )
         if (subtitle != null) {
             Spacer(Modifier.height(Spacing.xs))
@@ -75,54 +74,6 @@ fun StatCard(
         }
     }
 }
-
-/**
- * Status pill badge with icon + text (Running / Stopped / Error).
- * Accessible: uses icon shape + text, not just color.
- */
-@Composable
-fun StatusBadge(
-    status: String,
-    modifier: Modifier = Modifier,
-) {
-    val sc = GostSemantics.colors
-    val (bg, fg, glow, icon) = when (status.lowercase()) {
-        "running", "online" -> Quadruple(sc.statusSuccessContainer, sc.statusSuccess, GreenGlow.copy(alpha = 0.3f), Icons.Default.CheckCircle)
-        "stopped", "idle", "offline" -> Quadruple(
-            GlassWhite,
-            MaterialTheme.colorScheme.onSurfaceVariant,
-            Color.Transparent,
-            Icons.Default.PauseCircle,
-        )
-        "error" -> Quadruple(sc.statusErrorContainer, sc.statusError, RedGlow.copy(alpha = 0.3f), Icons.Default.Error)
-        else -> Quadruple(sc.statusWarningContainer, sc.statusWarning, OrangeGlow.copy(alpha = 0.3f), Icons.Default.HelpOutline)
-    }
-
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(GostRadius.md))
-            .background(bg)
-            .border(1.dp, fg.copy(alpha = 0.3f), RoundedCornerShape(GostRadius.md))
-            .padding(horizontal = Spacing.md, vertical = Spacing.xs),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = status,
-            tint = fg,
-            modifier = Modifier.size(14.dp),
-        )
-        Text(
-            text = status.replaceFirstChar { it.uppercase() },
-            color = fg,
-            style = GostTextStyles.pillLabel,
-        )
-    }
-}
-
-// Helper for StatusBadge
-private data class Quadruple<out A, out B, out C, out D>(val first: A, val second: B, val third: C, val fourth: D)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -152,12 +103,6 @@ fun IconTooltipButton(
         }
     }
 }
-
-/**
- * Legacy alias — kept for compatibility.
- */
-@Composable
-fun StatusPill(status: String, modifier: Modifier = Modifier) = StatusBadge(status, modifier)
 
 /**
  * Typed status pill for tunnel/runtime entities.
@@ -254,25 +199,6 @@ fun EmptyState(
 }
 
 /**
- * Reusable search bar input.
- */
-@Deprecated("Use SaaSSearchBar for consistent styling.")
-@Composable
-fun SearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    placeholder: String = "Search…",
-    modifier: Modifier = Modifier,
-) {
-    SaaSSearchBar(
-        query = query,
-        onQueryChange = onQueryChange,
-        placeholder = placeholder,
-        modifier = modifier,
-    )
-}
-
-/**
  * Delete confirmation dialog.
  * Button order: Cancel on the right (confirm position), destructive on the left (dismiss position).
  */
@@ -305,55 +231,6 @@ fun ConfirmDialog(
                 onClick = onConfirm,
                 type = SaaSButtonType.ACTION,
                 modifier = Modifier.widthIn(max = 160.dp),
-            )
-        }
-    }
-}
-
-/**
- * Labeled form field with optional error message.
- */
-@Composable
-fun FormField(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    error: String? = null,
-    placeholder: String = "",
-    helperText: String? = null,
-    singleLine: Boolean = true,
-    enabled: Boolean = true,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier) {
-        Text(
-            text = label,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelMedium,
-        )
-        Spacer(Modifier.height(Spacing.xs))
-        SaaSTextField(
-            value = value,
-            onValueChange = onValueChange,
-            placeholder = placeholder,
-            isError = error != null,
-            singleLine = singleLine,
-            enabled = enabled,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        if (error != null) {
-            Spacer(Modifier.height(Spacing.xs))
-            Text(
-                text = error,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.labelSmall,
-            )
-        } else if (helperText != null) {
-            Spacer(Modifier.height(Spacing.xs))
-            Text(
-                text = helperText,
-                color = MaterialTheme.colorScheme.outline,
-                style = MaterialTheme.typography.labelSmall,
             )
         }
     }
@@ -422,6 +299,31 @@ fun ErrorMessage(message: String) {
                 color = MaterialTheme.colorScheme.onErrorContainer,
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
+            )
+        }
+    }
+}
+
+/**
+ * Standardized info row for key-value pairs (used in Settings and forms).
+ */
+@Composable
+fun SaaSInfoRow(label: String, value: String, modifier: Modifier = Modifier) {
+    val sc = GostSemantics.colors
+    androidx.compose.foundation.text.selection.SelectionContainer {
+        Row(
+            modifier.fillMaxWidth().padding(vertical = Spacing.xs),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = label,
+                color = sc.textSecondary,
+                style = GostTextStyles.navItem,
+            )
+            Text(
+                text = value,
+                color = sc.textPrimary,
+                style = GostTextStyles.navItem.copy(fontWeight = FontWeight.Bold),
             )
         }
     }

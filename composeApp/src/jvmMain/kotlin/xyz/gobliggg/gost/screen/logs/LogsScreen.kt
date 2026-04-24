@@ -45,21 +45,21 @@ private fun LogLevelFilterChip(
     isActive: Boolean,
     onToggle: () -> Unit,
 ) {
-    val cs = MaterialTheme.colorScheme
+    val sc = GostSemantics.colors
     val (activeBg, activeFg) = when (levelLabel) {
-        "DEBUG" -> SaASSlate to Color.White.copy(alpha = 0.7f)
-        "INFO" -> SaaSSelection to GreenBright
-        "WARN" -> Color(0xFF4B2E0E) to OrangeBright
-        "ERROR" -> Color(0xFF451313) to RedStatus
-        else -> SaASSlate to Color.White
+        "DEBUG" -> sc.surfaceCard to Color.White.copy(alpha = 0.7f)
+        "INFO" -> sc.stateSelected to sc.statusSuccess
+        "WARN" -> Color(0xFF4B2E0E) to sc.statusWarning
+        "ERROR" -> Color(0xFF451313) to sc.statusError
+        else -> sc.surfaceCard to Color.White
     }
-    val inactiveBg = SaaSInputBg
+    val inactiveBg = sc.surfaceInput
     val inactiveFg = Color.White.copy(alpha = 0.4f)
     Box(
         Modifier
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(GostRadius.sm))
             .background(if (isActive) activeBg else inactiveBg)
-            .border(1.dp, if (isActive) activeFg.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+            .border(1.dp, if (isActive) activeFg.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.05f), RoundedCornerShape(GostRadius.sm))
             .clickable { onToggle() }
             .padding(horizontal = Spacing.sm, vertical = Spacing.xs),
     ) {
@@ -381,16 +381,17 @@ class LogsScreen : Screen {
 
 @Composable
 private fun LogLine(entry: LogEntry, palette: LogTerminalPalette) {
+    val sc = GostSemantics.colors
     val levelColor = when (entry.level.lowercase()) {
-        "error" -> RedStatus
-        "warn" -> AmberStatus
-        "info" -> Cyan300
+        "error" -> sc.statusError
+        "warn" -> sc.statusWarning
+        "info" -> sc.statusSuccess
         "debug" -> palette.onSurfaceDim
         else -> palette.onSurfaceMuted
     }
     val bgColor = when (entry.level.lowercase()) {
-        "error" -> RedStatus.copy(alpha = 0.08f)
-        "warn" -> AmberStatus.copy(alpha = 0.08f)
+        "error" -> sc.statusError.copy(alpha = 0.08f)
+        "warn" -> sc.statusWarning.copy(alpha = 0.08f)
         else -> Color.Transparent
     }
 
@@ -404,7 +405,7 @@ private fun LogLine(entry: LogEntry, palette: LogTerminalPalette) {
         Text(
             entry.timestamp,
             color = palette.onSurfaceDim,
-            fontSize = 11.sp,
+            style = GostTextStyles.logLine,
             fontFamily = MonoFontFamily,
             modifier = Modifier.width(90.dp),
         )
@@ -429,6 +430,6 @@ private fun LogLine(entry: LogEntry, palette: LogTerminalPalette) {
             }
             Spacer(Modifier.width(Spacing.xs))
         }
-        Text(entry.message, color = palette.onSurface, fontSize = 11.sp, fontFamily = MonoFontFamily)
+        Text(entry.message, color = palette.onSurface, style = GostTextStyles.logLine, fontFamily = MonoFontFamily)
     }
 }

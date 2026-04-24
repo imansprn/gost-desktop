@@ -78,7 +78,17 @@ class ChainsScreen(
             ) {
                 SaaSScreenHeader(
                     superTitle = "ROUTING",
-                    title = "Chains"
+                    title = "Chains",
+                    actions = {
+                        SaaSButton(
+                            text = "New Chain",
+                            onClick = {
+                                newChainName = ""
+                                showCreateDialog = true
+                            },
+                            type = SaaSButtonType.PRIMARY,
+                        )
+                    }
                 )
                 SaaSSearchBar(
                     query = searchQuery,
@@ -114,20 +124,6 @@ class ChainsScreen(
                     }
                 }
 
-                FloatingActionButton(
-                    onClick = {
-                        newChainName = ""
-                        showCreateDialog = true
-                    },
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(Spacing.lg),
-                    containerColor = SaASAction,
-                    contentColor = sc.focusRing,
-                    shape = RoundedCornerShape(GostRadius.md)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "New chain")
-                }
                 }
             }
 
@@ -150,9 +146,9 @@ class ChainsScreen(
                             text = editingChain!!.name ?: "Untitled Chain",
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = sc.textPrimary
                         )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                             if (isDirty) {
                                 SaaSButton(
                                     text = "Discard",
@@ -179,7 +175,7 @@ class ChainsScreen(
                             )
                         }
                     }
-                    Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(Spacing.xl))
                     
                     ChainVisualEditor(
                         chain = editingChain!!,
@@ -211,16 +207,16 @@ class ChainsScreen(
                 Text(
                     "Enter a unique name for the chain template.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = DarkTextSlate
+                    color = sc.textMuted
                 )
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(Spacing.lg))
                 SaaSTextField(
                     value = newChainName,
                     onValueChange = { newChainName = it },
                     label = "Chain Name",
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(Spacing.xl))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
@@ -231,7 +227,7 @@ class ChainsScreen(
                         onClick = { showCreateDialog = false },
                         type = SaaSButtonType.SECONDARY
                     )
-                    Spacer(Modifier.width(12.dp))
+                    Spacer(Modifier.width(Spacing.md))
                     SaaSButton(
                         text = "Create",
                         onClick = {
@@ -273,31 +269,30 @@ class ChainsScreen(
         onClick: () -> Unit,
         onDelete: () -> Unit
     ) {
+        val sc = GostSemantics.colors
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(
-                    if (isSelected) SaaSSelection else Color.Transparent
-                )
+                .padding(vertical = Spacing.xs)
+                .clip(RoundedCornerShape(GostRadius.sm))
+                .background(if (isSelected) sc.stateSelected else Color.Transparent)
                 .clickable { onClick() }
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = Spacing.lg, vertical = Spacing.md),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = Icons.Default.Link,
                 contentDescription = "Chain",
                 modifier = Modifier.size(16.dp),
-                tint = if (isSelected) GreenBright else Color.White.copy(alpha = 0.5f)
+                tint = if (isSelected) sc.statusSuccess else sc.textMuted
             )
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(Spacing.md))
             Text(
                 text = name,
                 modifier = Modifier.weight(1f),
                 fontSize = 13.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (isSelected) Color.White else Color.White.copy(alpha = 0.8f)
+                color = if (isSelected) sc.textPrimary else sc.textSecondary
             )
             if (isSelected) {
                 IconTooltipButton(
@@ -305,7 +300,7 @@ class ChainsScreen(
                     onClick = onDelete,
                     modifier = Modifier.size(24.dp),
                 ) {
-                    Icon(Icons.Default.Close, contentDescription = "Delete", modifier = Modifier.size(16.dp), tint = Color(0xFF64748B))
+                    Icon(Icons.Default.Close, contentDescription = "Delete", modifier = Modifier.size(16.dp), tint = sc.textMuted)
                 }
             }
         }

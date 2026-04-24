@@ -57,7 +57,7 @@ class SettingsScreen : Screen {
                             Modifier
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(
-                                    if (isActive) SaaSSelection
+                                    if (isActive) sc.stateSelected
                                     else Color.Transparent,
                                 )
                                 .border(
@@ -106,58 +106,25 @@ class SettingsScreen : Screen {
                     color = sc.textSecondary,
                     style = MaterialTheme.typography.labelMedium,
                 )
-                Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(5, 10, 30, 60).forEach { sec ->
-                        val isActive = settings.defaultPollIntervalSeconds == sec
-                        Box(
-                            Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(
-                                    if (isActive) SaaSSelection
-                                    else SaaSInputBg,
-                                )
-                                .clickable { AppState.updateSettings { it.copy(defaultPollIntervalSeconds = sec) } }
-                                .padding(horizontal = Spacing.md, vertical = Spacing.sm),
-                        ) {
-                            Text(
-                                "${sec}s",
-                                color = if (isActive) sc.focusRing else sc.textSecondary,
-                                fontSize = 12.sp,
-                                fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
-                    }
-                }
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(Spacing.sm))
+                SaaSToggleGroup(
+                    options = listOf(5, 10, 30, 60),
+                    selectedOption = settings.defaultPollIntervalSeconds,
+                    onOptionSelected = { sec -> AppState.updateSettings { it.copy(defaultPollIntervalSeconds = sec) } },
+                    labelModifier = { "${it}s" }
+                )
+                Spacer(Modifier.height(Spacing.md))
                 Text(
                     "Log buffer size",
                     color = sc.textSecondary,
                     style = MaterialTheme.typography.labelMedium,
                 )
-                Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(500, 1000, 5000, 10000).forEach { size ->
-                        val isActive = settings.logBufferSize == size
-                        Box(
-                            Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(
-                                    if (isActive) SaaSSelection
-                                    else SaaSInputBg,
-                                )
-                                .clickable { AppState.updateSettings { it.copy(logBufferSize = size) } }
-                                .padding(horizontal = Spacing.md, vertical = Spacing.sm),
-                        ) {
-                            Text(
-                                "$size",
-                                color = if (isActive) sc.focusRing else sc.textSecondary,
-                                fontSize = 12.sp,
-                                fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
-                    }
-                }
+                Spacer(Modifier.height(Spacing.sm))
+                SaaSToggleGroup(
+                    options = listOf(500, 1000, 5000, 10000),
+                    selectedOption = settings.logBufferSize,
+                    onOptionSelected = { size -> AppState.updateSettings { it.copy(logBufferSize = size) } }
+                )
             }
 
             HorizontalDivider(
@@ -191,9 +158,9 @@ class SettingsScreen : Screen {
             // ── Runtime ──
             SectionHeader("GOST Runtime")
             SectionCard {
-                InfoRow("Binary Path", settings.gostRuntime.binaryPath.ifBlank { "(not set)" })
-                InfoRow("Working Directory", settings.gostRuntime.workingDirectory.ifBlank { "(default)" })
-                InfoRow("Auto-start", if (settings.gostRuntime.autoStart) "Yes" else "No")
+                SaaSInfoRow("Binary Path", settings.gostRuntime.binaryPath.ifBlank { "(not set)" })
+                SaaSInfoRow("Working Directory", settings.gostRuntime.workingDirectory.ifBlank { "(default)" })
+                SaaSInfoRow("Auto-start", if (settings.gostRuntime.autoStart) "Yes" else "No")
             }
 
             HorizontalDivider(
@@ -204,10 +171,10 @@ class SettingsScreen : Screen {
             // ── About ──
             SectionHeader("About")
             SectionCard {
-                InfoRow("App Version", "1.0.0")
-                InfoRow("Target GOST", "≥ 3.1.0")
-                InfoRow("Runtime", System.getProperty("java.version", "?"))
-                InfoRow("Platform", "${System.getProperty("os.name")} ${System.getProperty("os.arch")}")
+                SaaSInfoRow("App Version", "1.0.0")
+                SaaSInfoRow("Target GOST", "≥ 3.1.0")
+                SaaSInfoRow("Runtime", System.getProperty("java.version", "?"))
+                SaaSInfoRow("Platform", "${System.getProperty("os.name")} ${System.getProperty("os.arch")}")
             }
         }
     }
@@ -221,32 +188,14 @@ private fun SectionHeader(title: String) {
 @Composable
 private fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
     SaaSListContainer(
-        Modifier
-            .fillMaxWidth()
-            .padding(Spacing.lg),
-        content = content,
-    )
-}
-
-@Composable
-private fun InfoRow(label: String, value: String) {
-    val sc = GostSemantics.colors
-    androidx.compose.foundation.text.selection.SelectionContainer {
-        Row(
-            Modifier.fillMaxWidth().padding(vertical = 6.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                label,
-                color = sc.textSecondary,
-                fontSize = 13.sp,
-            )
-            Text(
-                value,
-                color = sc.textPrimary,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-            )
-        }
+        Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.lg),
+            content = content
+        )
     }
 }
+

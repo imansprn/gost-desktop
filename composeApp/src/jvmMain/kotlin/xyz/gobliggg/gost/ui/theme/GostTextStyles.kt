@@ -22,6 +22,12 @@ object GostTextStyles {
             letterSpacing = 2.sp,
         )
 
+    val sectionTitle: TextStyle
+        @Composable get() = MaterialTheme.typography.labelMedium.copy(
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+
     val tableHeader: TextStyle
         @Composable get() = MaterialTheme.typography.labelSmall.copy(
             fontSize = 10.sp,
@@ -39,6 +45,34 @@ object GostTextStyles {
         @Composable get() = MaterialTheme.typography.labelSmall.copy(
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
+        )
+
+    /** Sidebar navigation item label. */
+    val navItem: TextStyle
+        @Composable get() = MaterialTheme.typography.bodyMedium.copy(
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+        )
+
+    /** Large stat value on dashboard cards. */
+    val statValue: TextStyle
+        @Composable get() = MaterialTheme.typography.headlineMedium.copy(
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+        )
+
+    /** Monospace log line text. */
+    val logLine: TextStyle
+        @Composable get() = MaterialTheme.typography.bodySmall.copy(
+            fontSize = 11.sp,
+        )
+
+    /** Tiny watermark text in sidebar footer. */
+    val watermark: TextStyle
+        @Composable get() = MaterialTheme.typography.labelSmall.copy(
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.5.sp,
         )
 }
 

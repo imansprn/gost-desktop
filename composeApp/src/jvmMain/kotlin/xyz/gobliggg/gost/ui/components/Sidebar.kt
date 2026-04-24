@@ -59,9 +59,9 @@ fun Sidebar(
     val sc = GostSemantics.colors
     val lightShell = cs.background.luminance() > 0.5f
     val shellBg = if (lightShell) cs.surfaceContainerLow else SidebarBg
-    val shellTextPrimary = if (lightShell) cs.onSurface else sc.textPrimary
-    val shellTextTertiary = if (lightShell) cs.onSurfaceVariant else sc.textDisabled
-    val shellDivider = if (lightShell) cs.outlineVariant else sc.dividerSubtle
+    val shellTextPrimary = Color.White
+    val shellTextTertiary = Color.White.copy(alpha = 0.7f)
+    val shellDivider = Color.White.copy(alpha = 0.12f)
     val logoSize = if (collapsed) 44.dp else 56.dp
     val logoRowHorizontalPadding = if (collapsed) 10.dp else 16.dp
 
@@ -95,7 +95,7 @@ fun Sidebar(
                     Text(
                         text = "GOST Desktop",
                         color = shellTextPrimary,
-                        fontSize = 15.sp, // Slightly larger
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                     )
                     if (gostVersion != null) {
@@ -122,7 +122,7 @@ fun Sidebar(
                         shape = RoundedCornerShape(GostRadius.sm)
                     )
                     .background(SidebarRuntimePillBg) // Dark pill box
-                    .padding(horizontal = 14.dp, vertical = 12.dp), // Increased internal padding
+                    .padding(horizontal = Spacing.md, vertical = Spacing.md), // Increased internal padding
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -132,14 +132,13 @@ fun Sidebar(
                             modifier = Modifier
                                 .size(6.dp)
                                 .clip(CircleShape)
-                                .background(GreenBright)
+                                .background(sc.statusSuccess)
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            text = "Runtime",
-                            color = sc.textMuted,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Medium
+                            text = "RUNTIME",
+                            color = sc.focusRing,
+                            style = GostTextStyles.superTitle,
                         )
                     }
                     Spacer(Modifier.height(4.dp))
@@ -200,20 +199,7 @@ fun Sidebar(
             }
         }
 
-        HorizontalDivider(
-            color = sc.borderSubtle,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
         Spacer(Modifier.height(4.dp))
-
-        // Collapse toggle
-        SidebarNavItem(
-            item = SidebarItem("collapse", if (collapsed) "Collapse" else "Hide Panel", if (collapsed) androidx.compose.material.icons.Icons.Default.ChevronRight else androidx.compose.material.icons.Icons.Default.ChevronLeft),
-            isSelected = false,
-            isCollapsed = collapsed,
-            lightShell = lightShell,
-            onClick = onToggleCollapse,
-        )
 
         if (isRuntimeValid) {
             SidebarNavItem(
@@ -226,23 +212,7 @@ fun Sidebar(
             )
         }
 
-        // ── Version Watermark ──
-        if (!collapsed) {
-            Spacer(Modifier.height(8.dp))
-            Box(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Text(
-                    "GOST V3 WRAPPER",
-                    color = if (lightShell) cs.outline else DarkTextWatermark,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp
-                )
-            }
-        }
+        Spacer(Modifier.height(Spacing.lg))
     }
 }
 
@@ -274,8 +244,8 @@ private fun SidebarNavItem(
 
     val targetTextColor = tint ?: when {
         isSelected -> sc.focusRing
-        isHovered -> sc.textPrimary
-        else -> sc.textMuted
+        isHovered -> SidebarTextActive
+        else -> SidebarTextInactive
     }
     
     val textColor by animateColorAsState(targetTextColor)
@@ -320,9 +290,7 @@ private fun SidebarNavItem(
                 Text(
                     text = item.label,
                     color = textColor,
-                    fontSize = 13.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    style = androidx.compose.ui.text.TextStyle(shadow = textShadow),
+                    style = GostTextStyles.navItem.copy(shadow = textShadow),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),

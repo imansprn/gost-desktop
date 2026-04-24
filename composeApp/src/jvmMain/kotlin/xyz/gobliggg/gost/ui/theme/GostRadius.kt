@@ -6,7 +6,7 @@ package xyz.gobliggg.gost.ui.theme
 
 import androidx.compose.ui.unit.dp
 
-/** Shared corner radii (CleanMyMac-style panels / controls). */
+/** Shared corner radii — all values on 4pt sub-grid. */
 object GostRadius {
     /** Small controls (chips, compact rows). */
     val sm = 8.dp
@@ -17,7 +17,6 @@ object GostRadius {
     /** Panels / cards. */
     val lg = 16.dp
 
-    val contentPanel = 22.dp
-    val heroButton = 14.dp
-    val logoMark = 18.dp
+    /** Full-round pill shapes. */
+    val pill = 100.dp
 }

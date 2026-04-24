@@ -3,6 +3,8 @@ package xyz.gobliggg.gost.screen.connection
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -41,159 +43,127 @@ class ConnectionScreen(
         SaaSAppBackground(
             modifier = Modifier.fillMaxSize()
         ) {
-            Column(
-                modifier = Modifier
-                    .widthIn(max = 600.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(sc.surfacePanel)
-                    .border(1.dp, sc.borderSubtle, RoundedCornerShape(16.dp))
-                    .padding(Spacing.xl),
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
             ) {
-                SaaSScreenHeader(
-                    superTitle = "SETUP",
-                    title = "GOST Desktop Setup",
-                    subtitle = "Configure your local GOST runtime",
-                    leading = {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(SaASAction),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text("G", color = sc.focusRing, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                        }
-                    },
-                )
-
-                Spacer(Modifier.height(Spacing.xxl))
-
-                // Binary Path
-                Text(
-                    "GOST Binary Path *",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.labelMedium,
-                )
-                Spacer(Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.Top,
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = 600.dp)
+                        .fillMaxWidth()
+                        .padding(Spacing.xl)
+                        .clip(RoundedCornerShape(GostRadius.lg))
+                        .background(sc.surfacePanel)
+                        .border(1.dp, sc.borderSubtle, RoundedCornerShape(GostRadius.lg))
+                        .verticalScroll(rememberScrollState())
+                        .padding(Spacing.xl),
                 ) {
-                    OutlinedTextField(
+                    SaaSScreenHeader(
+                        superTitle = "SETUP",
+                        title = "GOST Desktop Setup",
+                        subtitle = "Configure your local GOST runtime",
+                        leading = {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(SaASAction),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text("G", color = sc.focusRing, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            }
+                        },
+                    )
+
+                    Spacer(Modifier.height(Spacing.xxl))
+
+                    // Binary Path
+                    SaaSTextField(
                         value = state.binaryPath,
                         onValueChange = model::updateBinaryPath,
-                        placeholder = {
-                            Text(
-                                "/usr/local/bin/gost",
-                                color = MaterialTheme.colorScheme.outline,
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                        },
-                        singleLine = true,
+                        label = "GOST Binary Path *",
+                        placeholder = "/usr/local/bin/gost",
                         isError = state.pathError != null,
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.weight(1f).height(52.dp),
-                        textStyle = MaterialTheme.typography.bodyMedium,
-                        colors = saasTextFieldColors(),
-                        supportingText = if (state.pathError != null) {
-                            { Text(state.pathError!!, color = RedStatus) }
-                        } else null,
-                    )
-                    FilledTonalIconButton(
-                        onClick = {
-                            val chooser = JFileChooser()
-                            chooser.dialogTitle = "Select GOST binary"
-                            chooser.fileSelectionMode = JFileChooser.FILES_ONLY
-                            if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-                                model.updateBinaryPath(chooser.selectedFile.absolutePath)
+                        helperText = state.pathError,
+                        trailingIcon = {
+                            IconButton(
+                                onClick = {
+                                    val chooser = JFileChooser()
+                                    chooser.dialogTitle = "Select GOST binary"
+                                    chooser.fileSelectionMode = JFileChooser.FILES_ONLY
+                                    if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+                                        model.updateBinaryPath(chooser.selectedFile.absolutePath)
+                                    }
+                                },
+                            ) {
+                                Icon(
+                                    Icons.Default.FolderOpen,
+                                    contentDescription = "Browse for GOST binary",
+                                    tint = sc.textMuted,
+                                    modifier = Modifier.size(18.dp),
+                                )
                             }
                         },
-                        modifier = Modifier.padding(top = 4.dp),
-                    ) {
-                        Icon(
-                            Icons.Default.FolderOpen,
-                            contentDescription = "Browse for GOST binary",
-                            tint = Color.White
-                        )
-                    }
-                }
+                        modifier = Modifier.fillMaxWidth(),
+                    )
 
-                Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(Spacing.lg))
 
-                // Working Directory
-                Text(
-                    "Working Directory",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.labelMedium,
-                )
-                Spacer(Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.Top,
-                ) {
-                    OutlinedTextField(
+                    // Working Directory
+                    SaaSTextField(
                         value = state.workingDirectory,
                         onValueChange = model::updateWorkingDirectory,
-                        placeholder = {
-                            Text(
-                                "~/.gost-desktop",
-                                color = MaterialTheme.colorScheme.outline,
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                        },
-                        singleLine = true,
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.weight(1f).height(52.dp),
-                        textStyle = MaterialTheme.typography.bodyMedium,
-                        colors = saasTextFieldColors()
-                    )
-                    FilledTonalIconButton(
-                        onClick = {
-                            val chooser = JFileChooser()
-                            chooser.dialogTitle = "Select working directory"
-                            chooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-                            if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-                                model.updateWorkingDirectory(chooser.selectedFile.absolutePath)
+                        label = "Working Directory",
+                        placeholder = "~/.gost-desktop",
+                        trailingIcon = {
+                            IconButton(
+                                onClick = {
+                                    val chooser = JFileChooser()
+                                    chooser.dialogTitle = "Select working directory"
+                                    chooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+                                    if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+                                        model.updateWorkingDirectory(chooser.selectedFile.absolutePath)
+                                    }
+                                },
+                            ) {
+                                Icon(
+                                    Icons.Default.FolderOpen,
+                                    contentDescription = "Browse for working directory",
+                                    tint = sc.textMuted,
+                                    modifier = Modifier.size(18.dp),
+                                )
                             }
                         },
-                        modifier = Modifier.padding(top = 4.dp),
-                    ) {
-                        Icon(
-                            Icons.Default.FolderOpen,
-                            contentDescription = "Browse for working directory",
-                            tint = Color.White
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    Spacer(Modifier.height(Spacing.lg))
+
+                    // Auto Start
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = state.autoStart,
+                            onCheckedChange = model::updateAutoStart,
+                            colors = CheckboxDefaults.colors(checkedColor = sc.focusRing, checkmarkColor = Color.Black)
+                        )
+                        Spacer(Modifier.width(Spacing.xs))
+                        Text(
+                            "Auto-start last running tunnels",
+                            color = sc.textSecondary,
+                            style = MaterialTheme.typography.bodyMedium,
                         )
                     }
-                }
 
-                Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(Spacing.xxl))
 
-                // Auto Start
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(
-                        checked = state.autoStart,
-                        onCheckedChange = model::updateAutoStart,
-                        colors = CheckboxDefaults.colors(checkedColor = sc.focusRing, checkmarkColor = Color.Black)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        "Auto-start last running tunnels",
-                        color = sc.textSecondary,
-                        style = MaterialTheme.typography.bodyMedium,
+                    SaaSButton(
+                        text = "Save & Continue",
+                        onClick = { model.saveAndConnect(onConnected) },
+                        enabled = canConnect,
+                        type = SaaSButtonType.PRIMARY,
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
-
-                Spacer(Modifier.height(Spacing.xxl))
-
-                SaaSButton(
-                    text = "Save & Continue",
-                    onClick = { model.saveAndConnect(onConnected) },
-                    enabled = canConnect,
-                    type = SaaSButtonType.PRIMARY,
-                    modifier = Modifier.fillMaxWidth(),
-                )
             }
         }
     }

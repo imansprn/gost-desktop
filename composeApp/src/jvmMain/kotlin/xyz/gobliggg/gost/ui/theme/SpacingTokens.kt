@@ -14,9 +14,10 @@ object Spacing {
     val lg = 16.dp
     val xl = 24.dp
     val xxl = 32.dp
+    val xxxl = 48.dp
 
-    /** Inner padding for dashboard stat cards (keeps explicit 20dp). */
-    val statCardInner = 20.dp
+    /** Inner padding for dashboard stat cards. */
+    val statCardInner = 24.dp
 
     /** Common dialog interior padding. */
     val dialogPadding = 24.dp
@@ -25,5 +26,5 @@ object Spacing {
     val emptyStatePadding = 48.dp
 
     /** Common table header row vertical padding. */
-    val tableHeaderRowV = 20.dp
+    val tableHeaderRowV = 16.dp
 }

@@ -37,8 +37,7 @@ class ServicesScreen(
         var rowMenuService by remember { mutableStateOf<String?>(null) }
         val sc = GostSemantics.colors
 
-        Box(modifier = Modifier.fillMaxSize()) {
-            ScreenScaffold(
+        ScreenScaffold(
                 header = {
                     SaaSScreenHeader(
                         superTitle = "GOST RUNTIME",
@@ -49,6 +48,12 @@ class ServicesScreen(
                                 onQueryChange = model::search,
                                 placeholder = "Search tunnels…",
                                 modifier = Modifier.width(280.dp),
+                            )
+                            Spacer(Modifier.width(Spacing.md))
+                            SaaSButton(
+                                text = "Create Tunnel",
+                                onClick = onCreateService,
+                                type = SaaSButtonType.PRIMARY,
                             )
                         }
                     )
@@ -211,29 +216,15 @@ class ServicesScreen(
                         }
                     }
                 }
+            if (deleteTarget != null) {
+                val tunnelName = state.services.find { it.id == deleteTarget }?.name ?: "Tunnel"
+                ConfirmDialog(
+                    title = "Delete Tunnel",
+                    message = "Delete \"$tunnelName\"? Process will be stopped and config removed.",
+                    onConfirm = { model.deleteService(deleteTarget!!); deleteTarget = null },
+                    onDismiss = { deleteTarget = null },
+                )
             }
-
-            FloatingActionButton(
-                onClick = onCreateService,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(Spacing.xl),
-                containerColor = SaASAction,
-                contentColor = sc.focusRing,
-                shape = RoundedCornerShape(GostRadius.md)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "New tunnel")
-            }
-        }
-
-        if (deleteTarget != null) {
-            val tunnelName = state.services.find { it.id == deleteTarget }?.name ?: "Tunnel"
-            ConfirmDialog(
-                title = "Delete Tunnel",
-                message = "Delete \"$tunnelName\"? Process will be stopped and config removed.",
-                onConfirm = { model.deleteService(deleteTarget!!); deleteTarget = null },
-                onDismiss = { deleteTarget = null },
-            )
         }
     }
 }

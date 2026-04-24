@@ -1,20 +1,25 @@
 package xyz.gobliggg.gost.ui.components
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import xyz.gobliggg.gost.ui.theme.GostRadius
 import xyz.gobliggg.gost.ui.theme.GostSemantics
+import xyz.gobliggg.gost.ui.theme.Spacing
 
 /**
  * Standard dropdown “field” wrapper with optional search. Use this instead of bespoke
@@ -73,6 +78,7 @@ fun DropdownField(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DropdownFieldAnchor(
     label: String?,
@@ -83,31 +89,9 @@ private fun DropdownFieldAnchor(
     onClick: () -> Unit,
 ) {
     val sc = GostSemantics.colors
-    OutlinedTextField(
-        value = display,
-        onValueChange = {},
-        readOnly = true,
-        enabled = enabled,
-        label = label?.let { { Text(it) } },
-        placeholder = {
-            Text(
-                placeholder,
-                color = sc.textDisabled,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        },
-        trailingIcon = {
-            Icon(
-                imageVector = Icons.Default.ArrowDropDown,
-                contentDescription = null,
-                tint = sc.textMuted,
-            )
-        },
-        singleLine = true,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(GostRadius.md),
-        colors = saasTextFieldColors(),
-        textStyle = MaterialTheme.typography.bodyMedium,
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .then(
@@ -117,7 +101,67 @@ private fun DropdownFieldAnchor(
                     Modifier
                 }
             )
-            .clickable(enabled = enabled) { onClick() },
-    )
+            .clickable(enabled = enabled) { onClick() }
+    ) {
+        if (label != null) {
+            Text(
+                text = label,
+                color = sc.textMuted,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.height(Spacing.xs))
+        }
+
+        BasicTextField(
+            value = display,
+            onValueChange = {},
+            modifier = Modifier.fillMaxWidth().height(40.dp),
+            readOnly = true,
+            enabled = enabled,
+            singleLine = true,
+            interactionSource = interactionSource,
+            textStyle = MaterialTheme.typography.bodyMedium.copy(color = sc.textPrimary),
+            decorationBox = { innerTextField ->
+                TextFieldDefaults.DecorationBox(
+                    value = display,
+                    innerTextField = innerTextField,
+                    enabled = enabled,
+                    singleLine = true,
+                    visualTransformation = androidx.compose.ui.text.input.VisualTransformation.None,
+                    interactionSource = interactionSource,
+                    placeholder = {
+                        Text(
+                            text = placeholder,
+                            color = sc.textDisabled,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
+                    trailingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = null,
+                            tint = sc.textMuted,
+                        )
+                    },
+                    container = {
+                        OutlinedTextFieldDefaults.Container(
+                            enabled = enabled,
+                            isError = false,
+                            interactionSource = interactionSource,
+                            colors = saasTextFieldColors(),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(GostRadius.md),
+                            focusedBorderThickness = 1.dp,
+                            unfocusedBorderThickness = 1.dp,
+                        )
+                    },
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                    colors = saasTextFieldColors(),
+                )
+            }
+        )
+    }
 }
 

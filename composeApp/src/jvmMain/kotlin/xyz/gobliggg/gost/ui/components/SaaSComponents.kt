@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -153,6 +154,7 @@ fun SaaSTableHeader(
 /**
  * Unified text field with the dark SaaS aesthetic.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SaaSTextField(
     value: String,
@@ -168,6 +170,8 @@ fun SaaSTextField(
     visualTransformation: androidx.compose.ui.text.input.VisualTransformation = androidx.compose.ui.text.input.VisualTransformation.None,
 ) {
     val sc = GostSemantics.colors
+    val interactionSource = remember { MutableInteractionSource() }
+    
     Column(modifier = modifier) {
         if (label != null) {
             Text(
@@ -178,26 +182,49 @@ fun SaaSTextField(
             )
             Spacer(Modifier.height(Spacing.xs))
         }
-        OutlinedTextField(
+        
+        BasicTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 42.dp),
-            placeholder = {
-                Text(
-                    text = placeholder,
-                    color = DarkTextDim,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            },
-            singleLine = singleLine,
+            modifier = Modifier.fillMaxWidth().height(40.dp),
             enabled = enabled,
-            isError = isError,
-            shape = RoundedCornerShape(GostRadius.md),
-            trailingIcon = trailingIcon,
+            singleLine = singleLine,
             visualTransformation = visualTransformation,
-            colors = saasTextFieldColors(),
-            textStyle = MaterialTheme.typography.bodyMedium
+            interactionSource = interactionSource,
+            textStyle = MaterialTheme.typography.bodyMedium.copy(color = sc.textPrimary),
+            decorationBox = { innerTextField ->
+                TextFieldDefaults.DecorationBox(
+                    value = value,
+                    innerTextField = innerTextField,
+                    enabled = enabled,
+                    singleLine = singleLine,
+                    visualTransformation = visualTransformation,
+                    interactionSource = interactionSource,
+                    placeholder = {
+                        Text(
+                            text = placeholder,
+                            color = DarkTextDim,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    },
+                    trailingIcon = trailingIcon,
+                    container = {
+                        OutlinedTextFieldDefaults.Container(
+                            enabled = enabled,
+                            isError = isError,
+                            interactionSource = interactionSource,
+                            colors = saasTextFieldColors(),
+                            shape = RoundedCornerShape(GostRadius.md),
+                            focusedBorderThickness = 1.dp,
+                            unfocusedBorderThickness = 1.dp,
+                        )
+                    },
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                    colors = saasTextFieldColors(),
+                )
+            }
         )
+
         if (helperText != null && !isError) {
             Spacer(Modifier.height(Spacing.xs))
             Text(
@@ -332,7 +359,7 @@ fun SaaSButton(
         // Custom button avoids desktop indication that can draw a box around text on hover.
         Box(
             modifier = gradientModifier
-                .height(36.dp)
+                .height(40.dp)
                 .clip(shape)
                 .clickable(
                     enabled = enabled && !loading,
@@ -355,7 +382,7 @@ fun SaaSButton(
                 onClick()
                 focusManager.clearFocus()
             },
-            modifier = modifier.height(36.dp),
+            modifier = modifier.height(40.dp),
             enabled = enabled && !loading,
             shape = shape,
             interactionSource = interactionSource,
@@ -456,3 +483,35 @@ fun SaaSDialog(
 }
 
 enum class SaaSDialogSize { Sm, Md, Lg, Xl }
+
+/**
+ * Reusable toggle group for multiple choice selection (e.g., settings pills).
+ */
+@Composable
+fun <T> SaaSToggleGroup(
+    options: List<T>,
+    selectedOption: T,
+    onOptionSelected: (T) -> Unit,
+    labelModifier: (T) -> String = { it.toString() },
+    modifier: Modifier = Modifier
+) {
+    val sc = GostSemantics.colors
+    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        options.forEach { option ->
+            val isActive = selectedOption == option
+            Box(
+                Modifier
+                    .clip(RoundedCornerShape(GostRadius.sm))
+                    .background(if (isActive) sc.stateSelected else sc.surfaceInput)
+                    .clickable { onOptionSelected(option) }
+                    .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+            ) {
+                Text(
+                    text = labelModifier(option),
+                    color = if (isActive) sc.focusRing else sc.textSecondary,
+                    style = GostTextStyles.buttonLabel.copy(fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal)
+                )
+            }
+        }
+    }
+}

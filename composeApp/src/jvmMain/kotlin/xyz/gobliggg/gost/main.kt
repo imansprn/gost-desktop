@@ -15,21 +15,19 @@ import androidx.compose.ui.window.WindowPosition
 import gost.composeapp.generated.resources.gostLogoPainter
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import xyz.gobliggg.gost.ui.WindowTitleState
 import xyz.gobliggg.gost.ui.applyUnifiedTitleBarIfSupported
 
 fun main() = application {
     val isRuntimeValid by xyz.gobliggg.gost.data.AppState.isRuntimeValid.collectAsState()
     val windowState = rememberWindowState(
-        size = if (isRuntimeValid) DpSize(1280.dp, 820.dp) else DpSize(520.dp, 460.dp),
+        size = if (isRuntimeValid) DpSize(1280.dp, 820.dp) else DpSize(520.dp, 640.dp),
         position = WindowPosition(Alignment.Center),
     )
 
     androidx.compose.runtime.LaunchedEffect(isRuntimeValid) {
-        windowState.size = if (isRuntimeValid) DpSize(1280.dp, 820.dp) else DpSize(520.dp, 460.dp)
+        windowState.size = if (isRuntimeValid) DpSize(1280.dp, 820.dp) else DpSize(520.dp, 640.dp)
+        windowState.position = WindowPosition(Alignment.Center)
     }
-
-    val windowTitle by WindowTitleState.title.collectAsState()
 
     val exitApp = {
         xyz.gobliggg.gost.data.ProcessManager.stopAll()
