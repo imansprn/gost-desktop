@@ -19,10 +19,15 @@ import xyz.gobliggg.gost.ui.WindowTitleState
 import xyz.gobliggg.gost.ui.applyUnifiedTitleBarIfSupported
 
 fun main() = application {
+    val isRuntimeValid by xyz.gobliggg.gost.data.AppState.isRuntimeValid.collectAsState()
     val windowState = rememberWindowState(
-        size = DpSize(1280.dp, 820.dp),
+        size = if (isRuntimeValid) DpSize(1280.dp, 820.dp) else DpSize(520.dp, 460.dp),
         position = WindowPosition(Alignment.Center),
     )
+
+    androidx.compose.runtime.LaunchedEffect(isRuntimeValid) {
+        windowState.size = if (isRuntimeValid) DpSize(1280.dp, 820.dp) else DpSize(520.dp, 460.dp)
+    }
 
     val windowTitle by WindowTitleState.title.collectAsState()
 
