@@ -61,13 +61,18 @@ jobs:
 
       - name: Build ARM64
         if: matrix.is_universal
-        run: ./gradlew :composeApp:createDistributable "-PappVersion=${{ steps.ver.outputs.version }}" --no-daemon
+        run: ./gradlew clean :composeApp:createDistributable "-PappVersion=${{ steps.ver.outputs.version }}" --no-daemon
 
-      - name: Store ARM64 App
+      - name: Verify and Store ARM64 App
         if: matrix.is_universal
         run: |
           mkdir -p build/arch/arm64
           cp -R composeApp/build/compose/binaries/main/app/*.app build/arch/arm64/
+          APP_PATH=$(find build/arch/arm64 -name "*.app" -maxdepth 1)
+          EXE_NAME=$(basename "$APP_PATH" .app)
+          echo "Verifying ARM64 binary:"
+          file "$APP_PATH/Contents/MacOS/$EXE_NAME"
+          lipo -info "$APP_PATH/Contents/MacOS/$EXE_NAME"
 
       - name: Set up JDK 21 (x64)
         if: matrix.is_universal
@@ -79,13 +84,18 @@ jobs:
 
       - name: Build x64
         if: matrix.is_universal
-        run: ./gradlew :composeApp:createDistributable "-PappVersion=${{ steps.ver.outputs.version }}" --no-daemon
+        run: arch -x86_64 ./gradlew clean :composeApp:createDistributable "-PappVersion=${{ steps.ver.outputs.version }}" --no-daemon
 
-      - name: Store x64 App
+      - name: Verify and Store x64 App
         if: matrix.is_universal
         run: |
           mkdir -p build/arch/x64
           cp -R composeApp/build/compose/binaries/main/app/*.app build/arch/x64/
+          APP_PATH=$(find build/arch/x64 -name "*.app" -maxdepth 1)
+          EXE_NAME=$(basename "$APP_PATH" .app)
+          echo "Verifying x64 binary:"
+          file "$APP_PATH/Contents/MacOS/$EXE_NAME"
+          lipo -info "$APP_PATH/Contents/MacOS/$EXE_NAME"
 
       - name: Create Universal Binary
         if: matrix.is_universal
