@@ -11,15 +11,16 @@ data class LocalConfig(
     val settings: AppSettings = AppSettings()
 )
 
-class LocalConfigRepository {
+class LocalConfigRepository(
+    private val baseDir: File = File(System.getProperty("user.home"), ".gost-manager")
+) {
     private val json = Json { 
         prettyPrint = true
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
     
-    // Changing the config dir slightly or keep it. Let's keep it.
-    private val configDir = File(System.getProperty("user.home"), ".gost-manager")
+    private val configDir = baseDir
     private val configFile = File(configDir, "config.json")
     
     init {

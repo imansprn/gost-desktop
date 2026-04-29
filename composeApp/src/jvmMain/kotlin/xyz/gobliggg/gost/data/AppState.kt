@@ -29,8 +29,8 @@ object AppState {
     private lateinit var configRepo: LocalConfigRepository
     private var localConfig = LocalConfig()
 
-    fun initialize() {
-        configRepo = LocalConfigRepository()
+    fun initialize(repo: LocalConfigRepository = LocalConfigRepository()) {
+        configRepo = repo
         localConfig = configRepo.load()
         
         _settings.value = localConfig.settings

@@ -103,19 +103,52 @@ jobs:
           file "$APP_PATH/Contents/MacOS/$EXE_NAME"
           lipo -info "$APP_PATH/Contents/MacOS/$EXE_NAME"
 
-      - name: Create Universal Binary
+      # Merge every Mach-O (launcher, bundled JBR, dylibs) — launcher-only lipo leaves ARM64-only java on Intel.
+      - name: Create Universal .app
         if: matrix.is_universal
+        shell: bash
         run: |
-          mkdir -p build/arch/universal
-          cp -R build/arch/arm64/*.app build/arch/universal/
-          APP_PATH=$(find build/arch/universal -name "*.app" -maxdepth 1)
-          APP_NAME=$(basename "$APP_PATH")
-          EXE_NAME="${APP_NAME%.app}"
-          lipo -create \
-            build/arch/x64/"$APP_NAME"/Contents/MacOS/"$EXE_NAME" \
-            build/arch/arm64/"$APP_NAME"/Contents/MacOS/"$EXE_NAME" \
-            -output build/arch/universal/"$APP_NAME"/Contents/MacOS/"$EXE_NAME"
-          lipo -info build/arch/universal/"$APP_NAME"/Contents/MacOS/"$EXE_NAME"
+          set -euo pipefail
+          APP_NAME=$(basename "$(find build/arch/arm64 -maxdepth 1 -name '*.app')")
+          ARM_APP="build/arch/arm64/$APP_NAME"
+          X64_APP="build/arch/x64/$APP_NAME"
+          UNI_APP="build/arch/universal/$APP_NAME"
+          rm -rf build/arch/universal && mkdir -p build/arch/universal
+          cp -a "$ARM_APP" "$UNI_APP"
+          while IFS= read -r -d '' sigdir; do
+            rm -rf "$sigdir"
+          done < <(find "$UNI_APP" -type d -name _CodeSignature -print0)
+
+          merged=0
+          copied=0
+          while IFS= read -r -d '' XF; do
+            REL="${XF#$X64_APP/}"
+            AF="$ARM_APP/$REL"
+            UF="$UNI_APP/$REL"
+            if [[ ! -e "$AF" ]]; then
+              mkdir -p "$(dirname "$UF")"
+              cp -a "$XF" "$UF"
+              copied=$((copied + 1))
+              continue
+            fi
+            if file -b "$XF" | grep -q "Mach-O" && file -b "$AF" | grep -q "Mach-O"; then
+              if lipo -create "$AF" "$XF" -output "$UF" 2>/dev/null; then
+                merged=$((merged + 1))
+              fi
+            fi
+          done < <(find "$X64_APP" -type f -print0)
+          echo "Merged $merged Mach-O files; copied $copied x64-only files."
+
+          codesign --force --deep --sign - "$UNI_APP"
+
+          EXE="$UNI_APP/Contents/MacOS/${APP_NAME%.app}"
+          JAVA="$UNI_APP/Contents/runtime/Contents/Home/bin/java"
+          echo "Launcher:"
+          lipo -info "$EXE"
+          if [[ -f "$JAVA" ]]; then
+            echo "Bundled java:"
+            lipo -info "$JAVA"
+          fi
 
       - name: Create DMG
         if: matrix.is_universal
