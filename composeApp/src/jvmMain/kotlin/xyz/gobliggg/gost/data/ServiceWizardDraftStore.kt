@@ -1,12 +1,15 @@
 package xyz.gobliggg.gost.data
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.io.File
 
 @Serializable
-data class ForwarderDraftRow(val name: String, val addr: String)
+data class ForwarderDraftRow(
+    val name: String,
+    val addr: String,
+)
 
 @Serializable
 data class ServiceWizardDraftData(
@@ -30,11 +33,12 @@ data class ServiceWizardDraftData(
 )
 
 object ServiceWizardDraftStore {
-    private val json = Json {
-        prettyPrint = true
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-    }
+    private val json =
+        Json {
+            prettyPrint = true
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+        }
 
     private val dir = File(System.getProperty("user.home"), ".gost-manager")
     private val file = File(dir, "service-wizard-draft.json")
@@ -52,12 +56,14 @@ object ServiceWizardDraftStore {
         try {
             if (!dir.exists()) dir.mkdirs()
             file.writeText(json.encodeToString(draft))
-        } catch (_: Exception) { }
+        } catch (_: Exception) {
+        }
     }
 
     fun clear() {
         try {
             if (file.exists()) file.delete()
-        } catch (_: Exception) { }
+        } catch (_: Exception) {
+        }
     }
 }

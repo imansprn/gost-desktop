@@ -5,8 +5,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
 import xyz.gobliggg.gost.model.AppSettings
-import xyz.gobliggg.gost.model.ThemeMode
 import xyz.gobliggg.gost.model.GostRuntimeConfig
+import xyz.gobliggg.gost.model.ThemeMode
 import java.io.File
 
 /**
@@ -23,7 +23,6 @@ object AppState {
     private val _settings = MutableStateFlow(AppSettings())
     val settings: StateFlow<AppSettings> = _settings.asStateFlow()
 
-
     private var pendingShellRoute: String? = null
 
     private lateinit var configRepo: LocalConfigRepository
@@ -32,11 +31,16 @@ object AppState {
     fun initialize(repo: LocalConfigRepository = LocalConfigRepository()) {
         configRepo = repo
         localConfig = configRepo.load()
-        
-        _settings.value = localConfig.settings
-        
-        checkRuntimeValid(localConfig.settings.gostRuntime)
-        
+        val loaded = localConfig.settings
+        val normalized = loaded.copy(theme = ThemeMode.DARK)
+        _settings.value = normalized
+        if (loaded.theme != ThemeMode.DARK) {
+            localConfig = localConfig.copy(settings = normalized)
+            configRepo.save(localConfig)
+        }
+
+        checkRuntimeValid(normalized.gostRuntime)
+
         // Ensure other systems boot up
         ServiceRegistry.initialize()
         ProcessManager.initialize()
@@ -50,11 +54,11 @@ object AppState {
     }
 
     fun updateSettings(transform: (AppSettings) -> AppSettings) {
-        val updated = transform(_settings.value)
+        val updated = transform(_settings.value).copy(theme = ThemeMode.DARK)
         _settings.value = updated
         localConfig = localConfig.copy(settings = updated)
         configRepo.save(localConfig)
-        
+
         checkRuntimeValid(updated.gostRuntime)
     }
 
@@ -90,9 +94,5 @@ object AppState {
     fun deleteProfile(id: String) { /* no-op in local mode */ }
 
     val isDarkTheme: Boolean
-        get() = when (_settings.value.theme) {
-            ThemeMode.DARK -> true
-            ThemeMode.LIGHT -> false
-            ThemeMode.SYSTEM -> true
-        }
+        get() = true
 }

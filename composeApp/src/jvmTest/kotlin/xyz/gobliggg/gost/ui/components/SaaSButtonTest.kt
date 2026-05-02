@@ -9,19 +9,18 @@ import xyz.gobliggg.gost.ui.theme.GostTheme
 import kotlin.test.assertTrue
 
 class SaaSButtonTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
     @Test
     fun testSaaSButtonShowsTextAndClicks() {
         var clicked = false
-        
+
         composeTestRule.setContent {
             GostTheme {
                 SaaSButton(
                     text = "Click Me",
-                    onClick = { clicked = true }
+                    onClick = { clicked = true },
                 )
             }
         }

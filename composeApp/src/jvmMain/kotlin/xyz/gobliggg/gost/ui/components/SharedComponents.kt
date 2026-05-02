@@ -1,16 +1,11 @@
 package xyz.gobliggg.gost.ui.components
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.error
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,11 +40,12 @@ fun StatCard(
 ) {
     val sc = GostSemantics.colors
     Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(GostRadius.lg))
-            .background(sc.surfaceCard)
-            .border(1.dp, sc.borderSubtle, RoundedCornerShape(GostRadius.lg))
-            .padding(Spacing.statCardInner),
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(GostRadius.lg))
+                .background(sc.surfaceCard)
+                .border(1.dp, sc.borderSubtle, RoundedCornerShape(GostRadius.lg))
+                .padding(Spacing.statCardInner),
     ) {
         Text(
             text = label,
@@ -97,7 +92,7 @@ fun IconTooltipButton(
                 focusManager.clearFocus()
             },
             modifier = modifier,
-            enabled = enabled
+            enabled = enabled,
         ) {
             content()
         }
@@ -113,25 +108,28 @@ fun ServiceStatusPill(
     status: ServiceStatus,
     modifier: Modifier = Modifier,
 ) {
-    val (label, icon) = when (status) {
-        ServiceStatus.RUNNING -> "Running" to Icons.Default.CheckCircle
-        ServiceStatus.IDLE -> "Stopped" to Icons.Default.PauseCircle
-        ServiceStatus.ERROR -> "Error" to Icons.Default.Error
-    }
+    val (label, icon) =
+        when (status) {
+            ServiceStatus.RUNNING -> "Running" to Icons.Default.CheckCircle
+            ServiceStatus.IDLE -> "Stopped" to Icons.Default.PauseCircle
+            ServiceStatus.ERROR -> "Error" to Icons.Default.Error
+        }
 
     val sc = GostSemantics.colors
-    val (bg, fg) = when (status) {
-        ServiceStatus.RUNNING -> sc.statusSuccessContainer to sc.statusSuccess
-        ServiceStatus.IDLE -> GlassWhite to MaterialTheme.colorScheme.onSurfaceVariant
-        ServiceStatus.ERROR -> sc.statusErrorContainer to sc.statusError
-    }
+    val (bg, fg) =
+        when (status) {
+            ServiceStatus.RUNNING -> sc.statusSuccessContainer to sc.statusSuccess
+            ServiceStatus.IDLE -> GlassWhite to MaterialTheme.colorScheme.onSurfaceVariant
+            ServiceStatus.ERROR -> sc.statusErrorContainer to sc.statusError
+        }
 
     Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(GostRadius.md))
-            .background(bg)
-            .border(1.dp, fg.copy(alpha = 0.3f), RoundedCornerShape(GostRadius.md))
-            .padding(horizontal = Spacing.md, vertical = Spacing.xs),
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(GostRadius.md))
+                .background(bg)
+                .border(1.dp, fg.copy(alpha = 0.3f), RoundedCornerShape(GostRadius.md))
+                .padding(horizontal = Spacing.md, vertical = Spacing.xs),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
@@ -163,9 +161,10 @@ fun EmptyState(
 ) {
     val sc = GostSemantics.colors
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(Spacing.emptyStatePadding),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(Spacing.emptyStatePadding),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(
@@ -192,7 +191,7 @@ fun EmptyState(
             SaaSButton(
                 text = actionLabel,
                 onClick = onAction,
-                type = SaaSButtonType.PRIMARY
+                type = SaaSButtonType.PRIMARY,
             )
         }
     }
@@ -255,18 +254,20 @@ fun ToastMessage(
     toast: ToastData,
     modifier: Modifier = Modifier,
 ) {
-    val bgColor = when (toast.type) {
-        ToastType.INFO -> BlueDeep.copy(alpha = 0.9f)
-        ToastType.SUCCESS -> GreenStatus.copy(alpha = 0.9f)
-        ToastType.ERROR -> RedStatus.copy(alpha = 0.9f)
-        ToastType.WARNING -> AmberStatus.copy(alpha = 0.9f)
-    }
+    val bgColor =
+        when (toast.type) {
+            ToastType.INFO -> BlueDeep.copy(alpha = 0.9f)
+            ToastType.SUCCESS -> GreenStatus.copy(alpha = 0.9f)
+            ToastType.ERROR -> RedStatus.copy(alpha = 0.9f)
+            ToastType.WARNING -> AmberStatus.copy(alpha = 0.9f)
+        }
 
     Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(bgColor)
-            .padding(horizontal = Spacing.lg, vertical = Spacing.md),
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(bgColor)
+                .padding(horizontal = Spacing.lg, vertical = Spacing.md),
     ) {
         Text(
             text = toast.message,
@@ -279,12 +280,13 @@ fun ToastMessage(
 @Composable
 fun ErrorMessage(message: String) {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(GostRadius.sm))
-            .background(MaterialTheme.colorScheme.errorContainer)
-            .border(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.2f), RoundedCornerShape(GostRadius.sm))
-            .padding(Spacing.md),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(GostRadius.sm))
+                .background(MaterialTheme.colorScheme.errorContainer)
+                .border(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.2f), RoundedCornerShape(GostRadius.sm))
+                .padding(Spacing.md),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
@@ -308,7 +310,11 @@ fun ErrorMessage(message: String) {
  * Standardized info row for key-value pairs (used in Settings and forms).
  */
 @Composable
-fun SaaSInfoRow(label: String, value: String, modifier: Modifier = Modifier) {
+fun SaaSInfoRow(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
     val sc = GostSemantics.colors
     androidx.compose.foundation.text.selection.SelectionContainer {
         Row(

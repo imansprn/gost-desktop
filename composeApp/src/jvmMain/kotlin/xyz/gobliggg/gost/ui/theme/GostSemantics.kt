@@ -18,21 +18,17 @@ data class GostSemanticColors(
     val textMuted: Color,
     val textDisabled: Color,
     val textOnAccent: Color,
-
     val surfaceApp: Color,
     val surfacePanel: Color,
     val surfaceCard: Color,
     val surfaceInput: Color,
-
     val borderSubtle: Color,
     val borderStrong: Color,
     val dividerSubtle: Color,
-
     val stateHover: Color,
     val statePressed: Color,
     val stateSelected: Color,
     val focusRing: Color,
-
     val statusSuccess: Color,
     val statusSuccessContainer: Color,
     val statusWarning: Color,
@@ -71,21 +67,17 @@ internal fun rememberGostSemanticColors(dark: Boolean): GostSemanticColors {
             textMuted = DarkTextSlate,
             textDisabled = Color.White.copy(alpha = 0.5f),
             textOnAccent = Color.White,
-
             surfaceApp = SaaSBackground,
             surfacePanel = SaASSurface,
             surfaceCard = SaASSurface,
             surfaceInput = SaaSInputBg,
-
             borderSubtle = Color.White.copy(alpha = 0.05f),
             borderStrong = GlassBorderHigh,
             dividerSubtle = Color.White.copy(alpha = 0.03f),
-
             stateHover = Color.White.copy(alpha = 0.05f),
             statePressed = Color.White.copy(alpha = 0.08f),
             stateSelected = SaaSSelection,
             focusRing = accent,
-
             statusSuccess = GreenStatus,
             statusSuccessContainer = GreenStatus.copy(alpha = 0.10f),
             statusWarning = AmberStatus,
@@ -96,38 +88,32 @@ internal fun rememberGostSemanticColors(dark: Boolean): GostSemanticColors {
             statusInfoContainer = accent.copy(alpha = 0.12f),
         )
     } else {
-        // User preference: keep the same navy + cyan/teal look even when theme mode is LIGHT.
-        val accent = Cyan400
+        val accent = Violet500
         GostSemanticColors(
-            textPrimary = Color.White,
-            textSecondary = Color.White.copy(alpha = 0.7f),
-            textMuted = DarkTextSlate,
-            textDisabled = Color.White.copy(alpha = 0.5f),
+            textPrimary = LightTextSlate900,
+            textSecondary = LightTextSlate500,
+            textMuted = LightTextSlate400,
+            textDisabled = LightTextSlate400.copy(alpha = 0.5f),
             textOnAccent = Color.White,
-
-            surfaceApp = SaaSBackground,
-            surfacePanel = SaASSurface,
-            surfaceCard = SaASSurface,
-            surfaceInput = SaaSInputBg,
-
-            borderSubtle = Color.White.copy(alpha = 0.05f),
-            borderStrong = GlassBorderHigh,
-            dividerSubtle = Color.White.copy(alpha = 0.03f),
-
-            stateHover = Color.White.copy(alpha = 0.05f),
-            statePressed = Color.White.copy(alpha = 0.08f),
-            stateSelected = SaaSSelection,
+            surfaceApp = LightBgGradientEnd,
+            surfacePanel = LightSidebarBg,
+            surfaceCard = LightHopCardBg,
+            surfaceInput = LightInputBg,
+            borderSubtle = LightEditorBorder.copy(alpha = 0.5f),
+            borderStrong = LightEditorBorder,
+            dividerSubtle = LightEditorBorder.copy(alpha = 0.3f),
+            stateHover = Violet50.copy(alpha = 0.5f),
+            statePressed = Violet50,
+            stateSelected = Violet50,
             focusRing = accent,
-
-            statusSuccess = GreenStatus,
-            statusSuccessContainer = GreenStatus.copy(alpha = 0.10f),
-            statusWarning = AmberStatus,
-            statusWarningContainer = AmberStatus.copy(alpha = 0.12f),
-            statusError = RedStatus,
-            statusErrorContainer = RedStatus.copy(alpha = 0.10f),
+            statusSuccess = Emerald500,
+            statusSuccessContainer = Emerald500.copy(alpha = 0.10f),
+            statusWarning = AmberStatusDark,
+            statusWarningContainer = AmberStatusDark.copy(alpha = 0.12f),
+            statusError = Rose500,
+            statusErrorContainer = Rose500.copy(alpha = 0.10f),
             statusInfo = accent,
             statusInfoContainer = accent.copy(alpha = 0.12f),
         )
     }
 }
-

@@ -7,7 +7,6 @@ import org.junit.Test
 import xyz.gobliggg.gost.ui.theme.GostTheme
 
 class ServicesScreenTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -20,9 +19,9 @@ class ServicesScreenTest {
         }
 
         // Check header
-        composeTestRule.onNodeWithText("Active Tunnels").assertExists()
-        composeTestRule.onNodeWithText("MANAGEMENT").assertExists()
-        
+        composeTestRule.onNodeWithText("Tunnels").assertExists()
+        composeTestRule.onNodeWithText("GOST RUNTIME").assertExists()
+
         // Check empty state (assuming no services)
         // If there's an empty state text, I should find it.
     }

@@ -44,13 +44,9 @@ fun isValidIpv4(ip: String): Boolean {
 /**
  * Validate a glob/domain pattern (e.g. "*.example.com").
  */
-fun isValidPattern(pattern: String): Boolean {
-    return pattern.isNotBlank() && !pattern.contains(" ")
-}
+fun isValidPattern(pattern: String): Boolean = pattern.isNotBlank() && !pattern.contains(" ")
 
 /**
  * Validate a service name (no spaces, not empty).
  */
-fun isValidServiceName(name: String): Boolean {
-    return name.isNotBlank() && !name.contains("\\s".toRegex())
-}
+fun isValidServiceName(name: String): Boolean = name.isNotBlank() && !name.contains("\\s".toRegex())

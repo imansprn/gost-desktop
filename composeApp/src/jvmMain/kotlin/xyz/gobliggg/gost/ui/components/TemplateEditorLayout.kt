@@ -81,7 +81,7 @@ fun TemplateEditorLayout(
 
             Button(
                 onClick = {
-                    val name = "new-${templateType}-${System.currentTimeMillis()}"
+                    val name = "new-$templateType-${System.currentTimeMillis()}"
                     ConfigBuilder.saveTemplate(templateType, name, defaultJson.replace("{name}", name))
                     templates = ConfigBuilder.listTemplates(templateType)
                     selectedTemplate = name
@@ -108,22 +108,29 @@ fun TemplateEditorLayout(
                     items(templates) { t ->
                         val isSel = t == selectedTemplate
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(
-                                    if (isSel) MaterialTheme.colorScheme.primaryContainer
-                                    else MaterialTheme.colorScheme.background,
-                                )
-                                .clickable { selectedTemplate = t }
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(
+                                        if (isSel) {
+                                            MaterialTheme.colorScheme.primaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.background
+                                        },
+                                    ).clickable { selectedTemplate = t }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
                                 text = t,
                                 modifier = Modifier.weight(1f),
-                                color = if (isSel) MaterialTheme.colorScheme.onPrimaryContainer
-                                else MaterialTheme.colorScheme.onSurface,
+                                color =
+                                    if (isSel) {
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
                                 fontSize = 13.sp,
                                 fontWeight = if (isSel) FontWeight.SemiBold else FontWeight.Normal,
                             )
@@ -216,10 +223,11 @@ fun TemplateEditorLayout(
                     },
                     readOnly = !isEditing,
                     modifier = Modifier.fillMaxSize(),
-                    textStyle = LocalTextStyle.current.copy(
-                        fontFamily = MonoFontFamily,
-                        fontSize = 13.sp,
-                    ),
+                    textStyle =
+                        LocalTextStyle.current.copy(
+                            fontFamily = MonoFontFamily,
+                            fontSize = 13.sp,
+                        ),
                     colors = saasTextFieldColors(),
                 )
             }
@@ -242,7 +250,10 @@ fun TemplateEditorLayout(
         ConfirmDialog(
             title = "Delete Template",
             message = "Remove \"$deleteTarget\"? This cannot be undone.",
-            onConfirm = { deleteTemplate(deleteTarget!!); deleteTarget = null },
+            onConfirm = {
+                deleteTemplate(deleteTarget!!)
+                deleteTarget = null
+            },
             onDismiss = { deleteTarget = null },
         )
     }

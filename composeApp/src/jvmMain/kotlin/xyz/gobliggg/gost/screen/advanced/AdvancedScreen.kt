@@ -1,14 +1,12 @@
 package xyz.gobliggg.gost.screen.advanced
-import xyz.gobliggg.gost.ui.components.*
-
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,34 +21,41 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import xyz.gobliggg.gost.api.dto.*
 import xyz.gobliggg.gost.data.ConfigBuilder
+import xyz.gobliggg.gost.ui.components.*
 import xyz.gobliggg.gost.ui.theme.*
 
 enum class AdvancedTab { BYPASS, ADMISSION, RESOLVERS, HOSTS }
 
 @OptIn(ExperimentalStdlibApi::class)
 class AdvancedScreen : Screen {
-
     @Composable
     override fun Content() {
         var activeTab by remember { mutableStateOf(AdvancedTab.BYPASS) }
         var searchQuery by remember { mutableStateOf("") }
         val sc = GostSemantics.colors
-        
-        val templateType = remember(activeTab) {
-            when (activeTab) {
-                AdvancedTab.BYPASS -> "bypasses"
-                AdvancedTab.ADMISSION -> "admissions"
-                AdvancedTab.RESOLVERS -> "resolvers"
-                AdvancedTab.HOSTS -> "hosts"
+
+        val templateType =
+            remember(activeTab) {
+                when (activeTab) {
+                    AdvancedTab.BYPASS -> "bypasses"
+                    AdvancedTab.ADMISSION -> "admissions"
+                    AdvancedTab.RESOLVERS -> "resolvers"
+                    AdvancedTab.HOSTS -> "hosts"
+                }
             }
-        }
-        
+
         var templates by remember { mutableStateOf(ConfigBuilder.listTemplates(templateType)) }
         var showDialog by remember { mutableStateOf(false) }
         var editingObject by remember { mutableStateOf<Any?>(null) }
         var deleteTarget by remember { mutableStateOf<String?>(null) }
-        
-        val json = remember { Json { ignoreUnknownKeys = true; prettyPrint = true } }
+
+        val json =
+            remember {
+                Json {
+                    ignoreUnknownKeys = true
+                    prettyPrint = true
+                }
+            }
 
         fun reload() {
             templates = ConfigBuilder.listTemplates(templateType)
@@ -61,31 +66,31 @@ class AdvancedScreen : Screen {
             searchQuery = ""
         }
 
-        val filteredTemplates = remember(templates, searchQuery) {
-            templates.filter { it.contains(searchQuery, ignoreCase = true) }
-        }
+        val filteredTemplates =
+            remember(templates, searchQuery) {
+                templates.filter { it.contains(searchQuery, ignoreCase = true) }
+            }
 
         Box(modifier = Modifier.fillMaxSize()) {
             ScreenScaffold(
                 header = {
                     SaaSScreenHeader(
                         superTitle = "TEMPLATES",
-                        title = "Advanced Objects"
+                        title = "Advanced Objects",
                     )
-                }
+                },
             ) {
-
                 TabRow(
                     selectedTabIndex = activeTab.ordinal,
                     containerColor = Color.Transparent,
                     contentColor = sc.focusRing,
-                    divider = { HorizontalDivider(color = sc.borderSubtle) }
+                    divider = { HorizontalDivider(color = sc.borderSubtle) },
                 ) {
                     AdvancedTab.values().forEach { tab ->
                         Tab(
                             selected = activeTab == tab,
                             onClick = { activeTab = tab },
-                            text = { Text(tab.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                            text = { Text(tab.name.lowercase().replaceFirstChar { it.uppercase() }) },
                         )
                     }
                 }
@@ -96,7 +101,7 @@ class AdvancedScreen : Screen {
                     query = searchQuery,
                     onQueryChange = { searchQuery = it },
                     placeholder = "Search ${activeTab.name.lowercase()}…",
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 Spacer(Modifier.height(Spacing.lg))
@@ -108,13 +113,13 @@ class AdvancedScreen : Screen {
                             description = "Advanced objects provide support for tunnel rules, DNS resolution, and static hosts.",
                             icon = Icons.Default.Tune,
                             actionLabel = if (searchQuery.isEmpty()) "Create First" else null,
-                            onAction = { showDialog = true }
+                            onAction = { showDialog = true },
                         )
                     } else {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
-                            contentPadding = PaddingValues(bottom = Spacing.xl)
+                            contentPadding = PaddingValues(bottom = Spacing.xl),
                         ) {
                             items(filteredTemplates) { name ->
                                 val content = ConfigBuilder.readTemplate(templateType, name)
@@ -127,7 +132,7 @@ class AdvancedScreen : Screen {
                                         editingObject = parseObject(activeTab, content, json, name)
                                         showDialog = true
                                     },
-                                    onDelete = { deleteTarget = name }
+                                    onDelete = { deleteTarget = name },
                                 )
                             }
                         }
@@ -135,23 +140,25 @@ class AdvancedScreen : Screen {
                 }
             }
 
-            val fabLabel = when (activeTab) {
-                AdvancedTab.BYPASS -> "New bypass"
-                AdvancedTab.ADMISSION -> "New admission"
-                AdvancedTab.RESOLVERS -> "New resolver"
-                AdvancedTab.HOSTS -> "New hosts"
-            }
+            val fabLabel =
+                when (activeTab) {
+                    AdvancedTab.BYPASS -> "New bypass"
+                    AdvancedTab.ADMISSION -> "New admission"
+                    AdvancedTab.RESOLVERS -> "New resolver"
+                    AdvancedTab.HOSTS -> "New hosts"
+                }
             FloatingActionButton(
                 onClick = {
                     editingObject = null
                     showDialog = true
                 },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(Spacing.xl),
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(Spacing.xl),
                 containerColor = SaASAction,
                 contentColor = sc.focusRing,
-                shape = RoundedCornerShape(GostRadius.md)
+                shape = RoundedCornerShape(GostRadius.md),
             ) {
                 Icon(Icons.Default.Add, contentDescription = fabLabel)
             }
@@ -162,27 +169,29 @@ class AdvancedScreen : Screen {
                 tab = activeTab,
                 initialObject = editingObject,
                 onSave = { obj ->
-                    val name = when (obj) {
-                        is BypassDto -> obj.name
-                        is AdmissionDto -> obj.name
-                        is ResolverDto -> obj.name
-                        is HostsDto -> obj.name
-                        else -> null
-                    }
-                    if (!name.isNullOrBlank()) {
-                        val stringContent = when (obj) {
-                            is BypassDto -> json.encodeToString(obj)
-                            is AdmissionDto -> json.encodeToString(obj)
-                            is ResolverDto -> json.encodeToString(obj)
-                            is HostsDto -> json.encodeToString(obj)
-                            else -> ""
+                    val name =
+                        when (obj) {
+                            is BypassDto -> obj.name
+                            is AdmissionDto -> obj.name
+                            is ResolverDto -> obj.name
+                            is HostsDto -> obj.name
+                            else -> null
                         }
+                    if (!name.isNullOrBlank()) {
+                        val stringContent =
+                            when (obj) {
+                                is BypassDto -> json.encodeToString(obj)
+                                is AdmissionDto -> json.encodeToString(obj)
+                                is ResolverDto -> json.encodeToString(obj)
+                                is HostsDto -> json.encodeToString(obj)
+                                else -> ""
+                            }
                         ConfigBuilder.saveTemplate(templateType, name, stringContent)
                         reload()
                         showDialog = false
                     }
                 },
-                onDismiss = { showDialog = false }
+                onDismiss = { showDialog = false },
             )
         }
 
@@ -196,12 +205,17 @@ class AdvancedScreen : Screen {
                     deleteTarget = null
                     reload()
                 },
-                onDismiss = { deleteTarget = null }
+                onDismiss = { deleteTarget = null },
             )
         }
     }
 
-    private fun parseObject(tab: AdvancedTab, content: String?, json: Json, name: String): Any? {
+    private fun parseObject(
+        tab: AdvancedTab,
+        content: String?,
+        json: Json,
+        name: String,
+    ): Any? {
         if (content == null) return null
         return try {
             when (tab) {
@@ -222,58 +236,66 @@ class AdvancedScreen : Screen {
         content: String?,
         json: Json,
         onEdit: () -> Unit,
-        onDelete: () -> Unit
+        onDelete: () -> Unit,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(SaASSlate.copy(0.4f))
-                .border(1.dp, Color.White.copy(0.05f), RoundedCornerShape(12.dp))
-                .clickable { onEdit() }
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(SaASSlate.copy(0.4f))
+                    .border(1.dp, Color.White.copy(0.05f), RoundedCornerShape(12.dp))
+                    .clickable { onEdit() }
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector = when (activeTab) {
-                    AdvancedTab.BYPASS -> Icons.Default.MoveToInbox
-                    AdvancedTab.ADMISSION -> Icons.Default.FactCheck
-                    AdvancedTab.RESOLVERS -> Icons.Default.Dns
-                    AdvancedTab.HOSTS -> Icons.Default.ViewList
-                },
+                imageVector =
+                    when (activeTab) {
+                        AdvancedTab.BYPASS -> Icons.Default.MoveToInbox
+                        AdvancedTab.ADMISSION -> Icons.Default.FactCheck
+                        AdvancedTab.RESOLVERS -> Icons.Default.Dns
+                        AdvancedTab.HOSTS -> Icons.Default.ViewList
+                    },
                 contentDescription = "Type: ${activeTab.name.lowercase()}",
                 modifier = Modifier.size(18.dp),
-                tint = Cyan300
+                tint = Cyan300,
             )
             Spacer(Modifier.width(12.dp))
-            
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(name, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White)
-                
+
                 // Subtitle info
-                val info = remember(content) {
-                    if (content == null) ""
-                    else try {
-                        when (activeTab) {
-                            AdvancedTab.BYPASS -> {
-                                val d = json.decodeFromString<BypassDto>(content)
-                                "${if (d.reverse == true) "Whitelist" else "Blacklist"} • ${d.matchers?.size ?: 0} rules"
-                            }
-                            AdvancedTab.ADMISSION -> {
-                                val d = json.decodeFromString<AdmissionDto>(content)
-                                "${if (d.reverse == true) "Allow" else "Deny"} • ${d.matchers?.size ?: 0} rules"
-                            }
-                            AdvancedTab.RESOLVERS -> {
-                                val d = json.decodeFromString<ResolverDto>(content)
-                                "${d.nameservers?.size ?: 0} servers • TTL ${d.ttl ?: "def"}"
-                            }
-                            AdvancedTab.HOSTS -> {
-                                val d = json.decodeFromString<HostsDto>(content)
-                                "${d.mappings?.size ?: 0} mappings"
+                val info =
+                    remember(content) {
+                        if (content == null) {
+                            ""
+                        } else {
+                            try {
+                                when (activeTab) {
+                                    AdvancedTab.BYPASS -> {
+                                        val d = json.decodeFromString<BypassDto>(content)
+                                        "${if (d.reverse == true) "Whitelist" else "Blacklist"} • ${d.matchers?.size ?: 0} rules"
+                                    }
+                                    AdvancedTab.ADMISSION -> {
+                                        val d = json.decodeFromString<AdmissionDto>(content)
+                                        "${if (d.reverse == true) "Allow" else "Deny"} • ${d.matchers?.size ?: 0} rules"
+                                    }
+                                    AdvancedTab.RESOLVERS -> {
+                                        val d = json.decodeFromString<ResolverDto>(content)
+                                        "${d.nameservers?.size ?: 0} servers • TTL ${d.ttl ?: "def"}"
+                                    }
+                                    AdvancedTab.HOSTS -> {
+                                        val d = json.decodeFromString<HostsDto>(content)
+                                        "${d.mappings?.size ?: 0} mappings"
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                "Error parsing template"
                             }
                         }
-                    } catch (e: Exception) { "Error parsing template" }
-                }
+                    }
                 Text(info, fontSize = 12.sp, color = Color.White.copy(alpha = 0.6f))
             }
 

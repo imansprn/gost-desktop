@@ -9,7 +9,6 @@ import xyz.gobliggg.gost.data.AppState
 import xyz.gobliggg.gost.ui.theme.GostTheme
 
 class SettingsScreenTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -23,7 +22,7 @@ class SettingsScreenTest {
     @Test
     fun testSettingsScreenRenders() {
         composeTestRule.setContent {
-            GostTheme {
+            GostTheme(darkTheme = true) {
                 SettingsScreen().Content()
             }
         }
@@ -38,21 +37,16 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun testThemeSelection() {
+    fun testSidebarDefaultToggle() {
         composeTestRule.setContent {
-            GostTheme {
+            GostTheme(darkTheme = true) {
                 SettingsScreen().Content()
             }
         }
 
-        // Toggle to Light theme
-        composeTestRule.onNodeWithText("Light").performClick()
-        
-        // Verify state (AppState.isDarkTheme should be false if light selected)
-        kotlin.test.assertFalse(AppState.isDarkTheme)
-        
-        // Toggle to Dark theme
-        composeTestRule.onNodeWithText("Dark").performClick()
+        val initial = AppState.settings.value.sidebarCollapsed
+        composeTestRule.onNodeWithText("Collapse sidebar by default").performClick()
+        kotlin.test.assertEquals(!initial, AppState.settings.value.sidebarCollapsed)
         kotlin.test.assertTrue(AppState.isDarkTheme)
     }
 }

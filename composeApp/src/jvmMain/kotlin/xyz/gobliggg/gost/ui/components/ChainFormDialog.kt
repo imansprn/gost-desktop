@@ -1,21 +1,20 @@
 package xyz.gobliggg.gost.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -29,9 +28,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,11 +44,9 @@ import xyz.gobliggg.gost.ui.theme.*
 
 private fun isSshLikeDialer(type: String?): Boolean = type == "ssh" || type == "sshd"
 
-private fun mergedDialerAuth(node: NodeDto): AuthDto =
-    node.dialer?.auth ?: node.auth ?: AuthDto()
+private fun mergedDialerAuth(node: NodeDto): AuthDto = node.dialer?.auth ?: node.auth ?: AuthDto()
 
-private fun mergedDialerMetadata(node: NodeDto): Map<String, String> =
-    node.dialer?.metadata ?: emptyMap()
+private fun mergedDialerMetadata(node: NodeDto): Map<String, String> = node.dialer?.metadata ?: emptyMap()
 
 @Composable
 fun ChainFormDialog(
@@ -66,6 +63,7 @@ fun ChainFormDialog(
                 ?: mutableListOf(HopDto(name = "hop-1", nodes = mutableListOf(NodeDto()))),
         )
     }
+    val sc = GostSemantics.colors
 
     SaaSDialog(
         title = if (isEdit) "Edit Chain" else "New Chain",
@@ -75,34 +73,34 @@ fun ChainFormDialog(
         leftContent = {
             SaaSTableHeader("WIZARD STEPS")
             Spacer(Modifier.height(Spacing.md))
-            
+
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 WizardStep(1, "Basic Configuration", true)
                 WizardStep(2, "Hop Rules & Nodes", true)
             }
-            
+
             Spacer(Modifier.weight(1f))
-            
+
             SaaSTableHeader("SUMMARY")
             Spacer(Modifier.height(Spacing.xs))
             Text(
                 "${hops.size} hops, ${hops.sumOf { it.nodes?.size ?: 0 }} nodes",
-                color = Color.White.copy(0.5f),
-                fontSize = 12.sp
+                color = sc.textSecondary.copy(alpha = 0.85f),
+                fontSize = 12.sp,
             )
-        }
+        },
     ) {
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             SaaSTableHeader("BASIC IDENTIFIER")
             Spacer(Modifier.height(Spacing.md))
-            
+
             SaaSTextField(
                 label = "Chain Name *",
                 value = name,
                 onValueChange = { name = it },
                 enabled = !isEdit,
                 placeholder = "my-chain",
-                helperText = "Unique name to reference this chain"
+                helperText = "Unique name to reference this chain",
             )
 
             Spacer(Modifier.height(Spacing.xl))
@@ -114,15 +112,15 @@ fun ChainFormDialog(
                     Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(SaaSInputBg.copy(0.5f))
-                        .border(1.dp, Color.White.copy(0.05f), RoundedCornerShape(12.dp))
+                        .background(sc.surfaceCard)
+                        .border(1.dp, sc.borderSubtle, RoundedCornerShape(12.dp))
                         .padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             "HOP ${hopIdx + 1}",
-                            color = GreenBright,
+                            color = sc.statusSuccess,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.weight(1f),
@@ -152,14 +150,14 @@ fun ChainFormDialog(
                             hops = newList
                         },
                         placeholder = "Hop Name",
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
 
                     Text(
                         "NODES IN THIS HOP",
-                        color = DarkTextSlate,
+                        color = sc.textMuted,
                         fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
                     )
 
                     hop.nodes?.forEachIndexed { nodeIdx, node ->
@@ -167,8 +165,8 @@ fun ChainFormDialog(
                             Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(SaaSBackground)
-                                .border(1.dp, Color.White.copy(0.05f), RoundedCornerShape(8.dp))
+                                .background(sc.surfaceInput)
+                                .border(1.dp, sc.borderSubtle, RoundedCornerShape(8.dp))
                                 .padding(12.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
@@ -211,9 +209,9 @@ fun ChainFormDialog(
                                 Column(Modifier.weight(1f)) {
                                     Text(
                                         "Connector",
-                                        color = DarkTextSlate,
+                                        color = sc.textMuted,
                                         fontSize = 10.sp,
-                                        fontWeight = FontWeight.SemiBold
+                                        fontWeight = FontWeight.SemiBold,
                                     )
                                     Spacer(Modifier.height(4.dp))
                                     ChainHopSimpleDropdown(
@@ -231,30 +229,46 @@ fun ChainFormDialog(
                                 Column(Modifier.weight(1f)) {
                                     Text(
                                         "Dialer",
-                                        color = DarkTextSlate,
+                                        color = sc.textMuted,
                                         fontSize = 10.sp,
-                                        fontWeight = FontWeight.SemiBold
+                                        fontWeight = FontWeight.SemiBold,
                                     )
                                     Spacer(Modifier.height(4.dp))
                                     ChainHopSimpleDropdown(
-                                        options = listOf("tcp", "udp", "tls", "mtls", "ws", "grpc", "quic", "kcp", "ssh", "sshd", "icmp", "ohttp"),
+                                        options =
+                                            listOf(
+                                                "tcp",
+                                                "udp",
+                                                "tls",
+                                                "mtls",
+                                                "ws",
+                                                "grpc",
+                                                "quic",
+                                                "kcp",
+                                                "ssh",
+                                                "sshd",
+                                                "icmp",
+                                                "ohttp",
+                                            ),
                                         selected = node.dialer?.type ?: "tcp",
                                         onSelect = {
                                             val newHops = hops.toMutableList()
                                             val newNodes = (hop.nodes ?: emptyList()).toMutableList()
-                                            val newDialer = if (isSshLikeDialer(it)) {
-                                                DialerDto(
-                                                    type = it,
-                                                    auth = node.dialer?.auth ?: node.auth,
-                                                    metadata = node.dialer?.metadata,
+                                            val newDialer =
+                                                if (isSshLikeDialer(it)) {
+                                                    DialerDto(
+                                                        type = it,
+                                                        auth = node.dialer?.auth ?: node.auth,
+                                                        metadata = node.dialer?.metadata,
+                                                    )
+                                                } else {
+                                                    DialerDto(type = it)
+                                                }
+                                            newNodes[nodeIdx] =
+                                                node.copy(
+                                                    dialer = newDialer,
+                                                    auth = if (isSshLikeDialer(it)) null else node.auth,
                                                 )
-                                            } else {
-                                                DialerDto(type = it)
-                                            }
-                                            newNodes[nodeIdx] = node.copy(
-                                                dialer = newDialer,
-                                                auth = if (isSshLikeDialer(it)) null else node.auth,
-                                            )
                                             newHops[hopIdx] = hop.copy(nodes = newNodes)
                                             hops = newHops
                                         },
@@ -286,7 +300,7 @@ fun ChainFormDialog(
                         },
                         type = SaaSButtonType.SECONDARY,
                         icon = Icons.Default.Add,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
@@ -299,9 +313,9 @@ fun ChainFormDialog(
                 },
                 type = SaaSButtonType.SECONDARY,
                 icon = Icons.Default.Add,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
-            
+
             Spacer(Modifier.height(Spacing.xxl))
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
@@ -315,8 +329,10 @@ fun ChainFormDialog(
                 SaaSButton(
                     text = "Save Chain",
                     onClick = { onSave(ChainDto(name = name, hops = hops)) },
-                    enabled = name.isNotBlank() && hops.isNotEmpty() &&
-                        hops.all { h -> !h.nodes.isNullOrEmpty() && h.nodes!!.all { !it.addr.isNullOrBlank() } },
+                    enabled =
+                        name.isNotBlank() &&
+                            hops.isNotEmpty() &&
+                            hops.all { h -> !h.nodes.isNullOrEmpty() && h.nodes!!.all { !it.addr.isNullOrBlank() } },
                     type = SaaSButtonType.ACTION,
                     icon = Icons.Default.Save,
                     modifier = Modifier.widthIn(max = 160.dp),
@@ -330,23 +346,29 @@ fun ChainFormDialog(
 private fun WizardStep(
     num: Int,
     label: String,
-    isActive: Boolean
+    isActive: Boolean,
 ) {
+    val sc = GostSemantics.colors
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(vertical = 4.dp)
+        modifier = Modifier.padding(vertical = 4.dp),
     ) {
         Box(
             Modifier
                 .size(24.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(if (isActive) SaaSSelection else SaaSInputBg),
-            contentAlignment = Alignment.Center
+                .background(if (isActive) sc.stateSelected else sc.surfaceInput),
+            contentAlignment = Alignment.Center,
         ) {
-            Text("$num", color = if (isActive) GreenBright else Color.White.copy(0.3f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "$num",
+                color = if (isActive) sc.statusSuccess else sc.textDisabled,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+            )
         }
         Spacer(Modifier.width(12.dp))
-        Text(label, color = if (isActive) Color.White else Color.White.copy(0.4f), fontSize = 13.sp)
+        Text(label, color = if (isActive) sc.textPrimary else sc.textSecondary, fontSize = 13.sp)
     }
 }
 
@@ -362,22 +384,24 @@ private fun SshDialerAuthBlock(
     val usePublicKey = meta.containsKey("privateKeyFile")
     val keyFile = meta["privateKeyFile"].orEmpty()
     val passphrase = meta["passphrase"].orEmpty()
+    val sc = GostSemantics.colors
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(SaaSInputBg.copy(0.3f))
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(sc.surfaceCard)
+                .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
             "SSH DIALER AUTH",
-            color = DarkTextSlate,
+            color = sc.textMuted,
             fontSize = 10.sp,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
         )
-        
+
         SaaSTextField(
             value = auth.username.orEmpty(),
             onValueChange = { v ->
@@ -389,7 +413,7 @@ private fun SshDialerAuthBlock(
                 )
             },
             placeholder = "Username",
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -399,8 +423,8 @@ private fun SshDialerAuthBlock(
                     Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(6.dp))
-                        .background(if (active) SaaSSelection else SaaSInputBg)
-                        .border(1.dp, if (active) GreenBright.copy(0.5f) else Color.Transparent, RoundedCornerShape(6.dp))
+                        .background(if (active) sc.stateSelected else sc.surfaceInput)
+                        .border(1.dp, if (active) sc.statusSuccess.copy(alpha = 0.5f) else Color.Transparent, RoundedCornerShape(6.dp))
                         .clickable {
                             if (isKey) {
                                 val m = meta.toMutableMap()
@@ -408,14 +432,27 @@ private fun SshDialerAuthBlock(
                                 onUpdate(node.copy(dialer = dial.copy(auth = auth.copy(password = null), metadata = m), auth = null))
                             } else {
                                 val m = meta.filterKeys { it != "privateKeyFile" && it != "passphrase" }.toMutableMap()
-                                onUpdate(node.copy(dialer = dial.copy(auth = auth.copy(password = auth.password), metadata = m.takeIf { it.isNotEmpty() }), auth = null))
+                                onUpdate(
+                                    node.copy(
+                                        dialer =
+                                            dial.copy(
+                                                auth = auth.copy(password = auth.password),
+                                                metadata = m.takeIf { it.isNotEmpty() },
+                                            ),
+                                        auth = null,
+                                    ),
+                                )
                             }
                             focusManager.clearFocus()
-                        }
-                        .padding(vertical = 8.dp),
-                    contentAlignment = Alignment.Center
+                        }.padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Text(label, color = if (active) GreenBright else Color.White.copy(0.4f), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        label,
+                        color = if (active) sc.statusSuccess else sc.textSecondary,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
                 }
             }
         }
@@ -433,7 +470,7 @@ private fun SshDialerAuthBlock(
                 },
                 placeholder = "Password (optional)",
                 modifier = Modifier.fillMaxWidth(),
-                visualTransformation = PasswordVisualTransformation()
+                visualTransformation = PasswordVisualTransformation(),
             )
         } else {
             SaaSTextField(
@@ -442,10 +479,15 @@ private fun SshDialerAuthBlock(
                     val m = mergedDialerMetadata(node).toMutableMap()
                     m["privateKeyFile"] = v
                     if (m["passphrase"].isNullOrBlank()) m.remove("passphrase")
-                    onUpdate(node.copy(dialer = dial.copy(auth = auth.copy(username = auth.username, password = null), metadata = m), auth = null))
+                    onUpdate(
+                        node.copy(
+                            dialer = dial.copy(auth = auth.copy(username = auth.username, password = null), metadata = m),
+                            auth = null,
+                        ),
+                    )
                 },
                 placeholder = "Private key file path",
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
             SaaSTextField(
                 value = passphrase,
@@ -453,19 +495,29 @@ private fun SshDialerAuthBlock(
                     val m = mergedDialerMetadata(node).toMutableMap()
                     if (!m.containsKey("privateKeyFile")) m["privateKeyFile"] = keyFile
                     if (v.isBlank()) m.remove("passphrase") else m["passphrase"] = v
-                    onUpdate(node.copy(dialer = dial.copy(auth = auth.copy(username = auth.username, password = null), metadata = m), auth = null))
+                    onUpdate(
+                        node.copy(
+                            dialer = dial.copy(auth = auth.copy(username = auth.username, password = null), metadata = m),
+                            auth = null,
+                        ),
+                    )
                 },
                 placeholder = "Key passphrase (optional)",
                 modifier = Modifier.fillMaxWidth(),
-                visualTransformation = PasswordVisualTransformation()
+                visualTransformation = PasswordVisualTransformation(),
             )
         }
     }
 }
 
 @Composable
-private fun ChainHopSimpleDropdown(options: List<String>, selected: String, onSelect: (String) -> Unit) {
+private fun ChainHopSimpleDropdown(
+    options: List<String>,
+    selected: String,
+    onSelect: (String) -> Unit,
+) {
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+    val sc = GostSemantics.colors
     SearchableStringDropdown(
         selected = selected,
         options = options,
@@ -476,28 +528,28 @@ private fun ChainHopSimpleDropdown(options: List<String>, selected: String, onSe
         searchPlaceholder = "Search types…",
     ) { onOpen ->
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
-                .background(SaaSInputBg)
-                .border(1.dp, Color.White.copy(0.05f), RoundedCornerShape(8.dp))
-                .clickable { 
-                    onOpen()
-                    focusManager.clearFocus()
-                }
-                .padding(horizontal = 12.dp, vertical = 10.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(sc.surfaceInput)
+                    .border(1.dp, sc.borderSubtle, RoundedCornerShape(8.dp))
+                    .clickable {
+                        onOpen()
+                        focusManager.clearFocus()
+                    }.padding(horizontal = 12.dp, vertical = 10.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     selected,
-                    color = Color.White,
+                    color = sc.textPrimary,
                     fontSize = 12.sp,
                     modifier = Modifier.weight(1f),
                 )
                 Icon(
                     Icons.Default.ArrowDropDown,
                     contentDescription = null,
-                    tint = Color.White.copy(0.4f),
+                    tint = sc.textSecondary,
                     modifier = Modifier.size(18.dp),
                 )
             }

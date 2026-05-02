@@ -1,15 +1,14 @@
 package xyz.gobliggg.gost.screen.config
-import xyz.gobliggg.gost.ui.components.*
-
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import xyz.gobliggg.gost.ui.GlobalWindowShortcuts
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,10 +18,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
+import xyz.gobliggg.gost.ui.GlobalWindowShortcuts
+import xyz.gobliggg.gost.ui.components.*
 import xyz.gobliggg.gost.ui.components.EmptyState
 import xyz.gobliggg.gost.ui.theme.*
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import javax.swing.JFileChooser
 
 class ConfigEditorScreen : Screen {
@@ -55,12 +54,15 @@ class ConfigEditorScreen : Screen {
                             SaaSButton(
                                 text = "Reload",
                                 onClick = {
-                                    if (state.isDirty) reloadConfirmOpen = true
-                                    else model.reloadFromDisk()
+                                    if (state.isDirty) {
+                                        reloadConfirmOpen = true
+                                    } else {
+                                        model.reloadFromDisk()
+                                    }
                                 },
                                 enabled = !state.isLoading,
                                 type = SaaSButtonType.SECONDARY,
-                                icon = Icons.Default.Refresh
+                                icon = Icons.Default.Refresh,
                             )
                             SaaSButton(
                                 text = "Export…",
@@ -74,7 +76,7 @@ class ConfigEditorScreen : Screen {
                                 },
                                 enabled = !state.isLoading,
                                 type = SaaSButtonType.SECONDARY,
-                                icon = Icons.Default.FileDownload
+                                icon = Icons.Default.FileDownload,
                             )
                             SaaSButton(
                                 text = "Save (Ctrl+S)",
@@ -82,18 +84,17 @@ class ConfigEditorScreen : Screen {
                                 enabled = !state.isSaving && state.isDirty,
                                 loading = state.isSaving,
                                 type = SaaSButtonType.ACTION,
-                                icon = Icons.Default.Save
+                                icon = Icons.Default.Save,
                             )
                         }
-                    }
+                    },
                 )
             },
             messages = {
                 state.errorMessage?.let { Banner(it, type = BannerType.Error) }
                 state.successMessage?.let { Banner(it, type = BannerType.Success) }
-            }
+            },
         ) {
-
             if (reloadConfirmOpen) {
                 SaaSDialog(
                     title = "Reload from disk?",
@@ -131,7 +132,7 @@ class ConfigEditorScreen : Screen {
             Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 // Left: service selector
                 Column(
-                    modifier = Modifier.width(200.dp).fillMaxHeight()
+                    modifier = Modifier.width(200.dp).fillMaxHeight(),
                 ) {
                     SaaSTableHeader("TUNNELS")
                     Spacer(Modifier.height(Spacing.sm))
@@ -148,20 +149,22 @@ class ConfigEditorScreen : Screen {
                                 val isSel = id == state.selectedServiceId
                                 Text(
                                     text = id,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(GostRadius.sm))
-                                        .background(
-                                            if (isSel) sc.stateSelected
-                                            else Color.Transparent
-                                        )
-                                        .border(
-                                            width = 1.dp,
-                                            color = if (isSel) sc.focusRing else sc.borderSubtle,
-                                            shape = RoundedCornerShape(GostRadius.sm)
-                                        )
-                                        .clickable { model.selectService(id) }
-                                        .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(GostRadius.sm))
+                                            .background(
+                                                if (isSel) {
+                                                    sc.stateSelected
+                                                } else {
+                                                    Color.Transparent
+                                                },
+                                            ).border(
+                                                width = 1.dp,
+                                                color = if (isSel) sc.focusRing else sc.borderSubtle,
+                                                shape = RoundedCornerShape(GostRadius.sm),
+                                            ).clickable { model.selectService(id) }
+                                            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
                                     color = if (isSel) sc.textPrimary else sc.textSecondary,
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
@@ -178,16 +181,17 @@ class ConfigEditorScreen : Screen {
                 // Right: editor
                 if (state.selectedServiceId != null) {
                     Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .clip(RoundedCornerShape(GostRadius.lg))
-                            .background(sc.surfaceInput)
-                            .border(
-                                1.dp,
-                                if (state.isDirty) sc.focusRing.copy(alpha = 0.4f) else sc.borderSubtle,
-                                RoundedCornerShape(GostRadius.lg),
-                            )
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(GostRadius.lg))
+                                .background(sc.surfaceInput)
+                                .border(
+                                    1.dp,
+                                    if (state.isDirty) sc.focusRing.copy(alpha = 0.4f) else sc.borderSubtle,
+                                    RoundedCornerShape(GostRadius.lg),
+                                ),
                     ) {
                         if (state.isLoading) {
                             CircularProgressIndicator(
@@ -199,20 +203,22 @@ class ConfigEditorScreen : Screen {
                                 value = state.content,
                                 onValueChange = model::updateContent,
                                 modifier = Modifier.fillMaxSize(),
-                                colors = TextFieldDefaults.colors(
-                                    unfocusedContainerColor = Color.Transparent,
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                    focusedIndicatorColor = Color.Transparent,
-                                    cursorColor = sc.focusRing,
-                                    focusedTextColor = sc.textPrimary,
-                                    unfocusedTextColor = sc.textSecondary,
-                                ),
-                                textStyle = androidx.compose.ui.text.TextStyle(
-                                    fontFamily = MonoFontFamily,
-                                    fontSize = 12.sp,
-                                    lineHeight = 18.sp,
-                                ),
+                                colors =
+                                    TextFieldDefaults.colors(
+                                        unfocusedContainerColor = Color.Transparent,
+                                        focusedContainerColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent,
+                                        focusedIndicatorColor = Color.Transparent,
+                                        cursorColor = sc.focusRing,
+                                        focusedTextColor = sc.textPrimary,
+                                        unfocusedTextColor = sc.textSecondary,
+                                    ),
+                                textStyle =
+                                    androidx.compose.ui.text.TextStyle(
+                                        fontFamily = MonoFontFamily,
+                                        fontSize = 12.sp,
+                                        lineHeight = 18.sp,
+                                    ),
                             )
                         }
                     }
@@ -227,5 +233,5 @@ class ConfigEditorScreen : Screen {
                 }
             }
         }
-}
+    }
 }

@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 data class GostRuntimeConfig(
     val binaryPath: String = "",
     val workingDirectory: String = "",
-    val autoStart: Boolean = false
+    val autoStart: Boolean = false,
 )
 
 @Serializable
@@ -21,5 +21,7 @@ data class AppSettings(
 
 @Serializable
 enum class ThemeMode {
-    LIGHT, DARK, SYSTEM
+    LIGHT,
+    DARK,
+    SYSTEM,
 }

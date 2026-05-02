@@ -4,13 +4,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -20,19 +21,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.collectAsState
-import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.core.screen.Screen
 import xyz.gobliggg.gost.ui.components.*
-import xyz.gobliggg.gost.ui.theme.Spacing
 import xyz.gobliggg.gost.ui.theme.*
+import xyz.gobliggg.gost.ui.theme.Spacing
 import javax.swing.JFileChooser
-import javax.swing.filechooser.FileNameExtensionFilter
 
 class ConnectionScreen(
     private val onConnected: () -> Unit,
 ) : Screen {
-
     @Composable
     override fun Content() {
         val model = rememberScreenModel { ConnectionScreenModel() }
@@ -41,22 +39,23 @@ class ConnectionScreen(
         val sc = GostSemantics.colors
 
         SaaSAppBackground(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         ) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(
-                    modifier = Modifier
-                        .widthIn(max = 600.dp)
-                        .fillMaxWidth()
-                        .padding(Spacing.xl)
-                        .clip(RoundedCornerShape(GostRadius.lg))
-                        .background(sc.surfacePanel)
-                        .border(1.dp, sc.borderSubtle, RoundedCornerShape(GostRadius.lg))
-                        .verticalScroll(rememberScrollState())
-                        .padding(Spacing.xl),
+                    modifier =
+                        Modifier
+                            .widthIn(max = 600.dp)
+                            .fillMaxWidth()
+                            .padding(Spacing.xl)
+                            .clip(RoundedCornerShape(GostRadius.lg))
+                            .background(sc.surfacePanel)
+                            .border(1.dp, sc.borderSubtle, RoundedCornerShape(GostRadius.lg))
+                            .verticalScroll(rememberScrollState())
+                            .padding(Spacing.xl),
                 ) {
                     SaaSScreenHeader(
                         superTitle = "SETUP",
@@ -64,10 +63,11 @@ class ConnectionScreen(
                         subtitle = "Configure your local GOST runtime",
                         leading = {
                             Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .background(SaASAction),
+                                modifier =
+                                    Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(SaASAction),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text("G", color = sc.focusRing, fontSize = 20.sp, fontWeight = FontWeight.Bold)
@@ -144,7 +144,7 @@ class ConnectionScreen(
                         Checkbox(
                             checked = state.autoStart,
                             onCheckedChange = model::updateAutoStart,
-                            colors = CheckboxDefaults.colors(checkedColor = sc.focusRing, checkmarkColor = Color.Black)
+                            colors = CheckboxDefaults.colors(checkedColor = sc.focusRing, checkmarkColor = Color.Black),
                         )
                         Spacer(Modifier.width(Spacing.xs))
                         Text(

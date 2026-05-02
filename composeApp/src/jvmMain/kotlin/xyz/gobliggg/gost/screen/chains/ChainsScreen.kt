@@ -1,14 +1,12 @@
 package xyz.gobliggg.gost.screen.chains
-import xyz.gobliggg.gost.ui.components.*
-
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,13 +23,13 @@ import xyz.gobliggg.gost.api.dto.ChainDto
 import xyz.gobliggg.gost.api.dto.HopDto
 import xyz.gobliggg.gost.api.dto.NodeDto
 import xyz.gobliggg.gost.data.ConfigBuilder
+import xyz.gobliggg.gost.ui.components.*
 import xyz.gobliggg.gost.ui.theme.*
 
 @OptIn(ExperimentalStdlibApi::class)
 class ChainsScreen(
     private val onEditService: (String) -> Unit = {},
 ) : Screen {
-
     @Composable
     override fun Content() {
         var templates by remember { mutableStateOf(ConfigBuilder.listTemplates("chains")) }
@@ -42,8 +40,14 @@ class ChainsScreen(
         var newChainName by remember { mutableStateOf("") }
         var deleteTarget by remember { mutableStateOf<String?>(null) }
         var searchQuery by remember { mutableStateOf("") }
-        
-        val json = remember { Json { ignoreUnknownKeys = true; prettyPrint = true } }
+
+        val json =
+            remember {
+                Json {
+                    ignoreUnknownKeys = true
+                    prettyPrint = true
+                }
+            }
 
         fun reload() {
             templates = ConfigBuilder.listTemplates("chains")
@@ -52,150 +56,153 @@ class ChainsScreen(
         LaunchedEffect(selectedTemplate) {
             if (selectedTemplate != null) {
                 val content = ConfigBuilder.readTemplate("chains", selectedTemplate!!)
-                editingChain = try {
-                    if (content != null) json.decodeFromString<ChainDto>(content) else null
-                } catch (e: Exception) {
-                    null
-                }
+                editingChain =
+                    try {
+                        if (content != null) json.decodeFromString<ChainDto>(content) else null
+                    } catch (e: Exception) {
+                        null
+                    }
             } else {
                 editingChain = null
             }
             isDirty = false
         }
 
-        val filteredTemplates = remember(templates, searchQuery) {
-            templates.filter { it.contains(searchQuery, ignoreCase = true) }
-        }
+        val filteredTemplates =
+            remember(templates, searchQuery) {
+                templates.filter { it.contains(searchQuery, ignoreCase = true) }
+            }
 
         val sc = GostSemantics.colors
         Box(modifier = Modifier.fillMaxSize().padding(Spacing.xl)) {
-        Row(modifier = Modifier.fillMaxSize()) {
-            // ── Left: Chain List (35%) ──
-            Column(
-                modifier = Modifier
-                    .width(320.dp)
-                    .fillMaxHeight()
-            ) {
-                SaaSScreenHeader(
-                    superTitle = "ROUTING",
-                    title = "Chains",
-                    actions = {
-                        SaaSButton(
-                            text = "New Chain",
-                            onClick = {
-                                newChainName = ""
-                                showCreateDialog = true
-                            },
-                            type = SaaSButtonType.PRIMARY,
-                        )
-                    }
-                )
-                SaaSSearchBar(
-                    query = searchQuery,
-                    onQueryChange = { searchQuery = it },
-                    placeholder = "Search chains...",
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(Spacing.lg))
-
-                Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                if (filteredTemplates.isEmpty()) {
-                    EmptyState(
-                        title = "No chains",
-                        description = "Chains route traffic through proxy nodes.",
-                        icon = Icons.Default.Link,
-                        actionLabel = "Create chain",
-                        onAction = {
-                            newChainName = ""
-                            showCreateDialog = true
+            Row(modifier = Modifier.fillMaxSize()) {
+                // ── Left: Chain List (35%) ──
+                Column(
+                    modifier =
+                        Modifier
+                            .width(320.dp)
+                            .fillMaxHeight(),
+                ) {
+                    SaaSScreenHeader(
+                        superTitle = "ROUTING",
+                        title = "Chains",
+                        actions = {
+                            SaaSButton(
+                                text = "New Chain",
+                                onClick = {
+                                    newChainName = ""
+                                    showCreateDialog = true
+                                },
+                                type = SaaSButtonType.PRIMARY,
+                            )
                         },
                     )
-                } else {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        items(filteredTemplates) { name ->
-                            val isSel = name == selectedTemplate
-                            ChainListItem(
-                                name = name,
-                                isSelected = isSel,
-                                onClick = { selectedTemplate = name },
-                                onDelete = { deleteTarget = name }
+                    SaaSSearchBar(
+                        query = searchQuery,
+                        onQueryChange = { searchQuery = it },
+                        placeholder = "Search chains...",
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(Spacing.lg))
+
+                    Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                        if (filteredTemplates.isEmpty()) {
+                            EmptyState(
+                                title = "No chains",
+                                description = "Chains route traffic through proxy nodes.",
+                                icon = Icons.Default.Link,
+                                actionLabel = "Create chain",
+                                onAction = {
+                                    newChainName = ""
+                                    showCreateDialog = true
+                                },
                             )
+                        } else {
+                            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                items(filteredTemplates) { name ->
+                                    val isSel = name == selectedTemplate
+                                    ChainListItem(
+                                        name = name,
+                                        isSelected = isSel,
+                                        onClick = { selectedTemplate = name },
+                                        onDelete = { deleteTarget = name },
+                                    )
+                                }
+                            }
                         }
                     }
                 }
 
-                }
-            }
+                Spacer(Modifier.width(Spacing.xl))
 
-            Spacer(Modifier.width(Spacing.xl))
+                // ── Right: Chain Editor (65%) ──
+                SaaSListContainer(
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                ) {
+                    Column(modifier = Modifier.fillMaxSize().padding(Spacing.xl)) {
+                        if (editingChain != null) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = editingChain!!.name ?: "Untitled Chain",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = sc.textPrimary,
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                                    if (isDirty) {
+                                        SaaSButton(
+                                            text = "Discard",
+                                            onClick = {
+                                                val old = selectedTemplate
+                                                selectedTemplate = null
+                                                selectedTemplate = old
+                                            },
+                                            type = SaaSButtonType.SECONDARY,
+                                        )
+                                    }
+                                    SaaSButton(
+                                        text = "Save Config",
+                                        onClick = {
+                                            val name = editingChain!!.name
+                                            if (!name.isNullOrBlank()) {
+                                                ConfigBuilder.saveTemplate("chains", name, json.encodeToString(editingChain))
+                                                isDirty = false
+                                                reload()
+                                            }
+                                        },
+                                        enabled = isDirty,
+                                        type = SaaSButtonType.ACTION,
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.height(Spacing.xl))
 
-            // ── Right: Chain Editor (65%) ──
-            SaaSListContainer(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-            ) {
-                Column(modifier = Modifier.fillMaxSize().padding(Spacing.xl)) {
-                if (editingChain != null) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = editingChain!!.name ?: "Untitled Chain",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = sc.textPrimary
-                        )
-                        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                            if (isDirty) {
-                                SaaSButton(
-                                    text = "Discard",
-                                    onClick = { 
-                                        val old = selectedTemplate
-                                        selectedTemplate = null
-                                        selectedTemplate = old 
-                                    },
-                                    type = SaaSButtonType.SECONDARY
+                            ChainVisualEditor(
+                                chain = editingChain!!,
+                                onUpdate = {
+                                    editingChain = it
+                                    isDirty = true
+                                },
+                            )
+                        } else {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                EmptyState(
+                                    title = "No chain selected",
+                                    description = "Select a chain on the left to edit its hops and nodes.",
+                                    icon = Icons.Default.LinkOff,
                                 )
                             }
-                            SaaSButton(
-                                text = "Save Config",
-                                onClick = {
-                                    val name = editingChain!!.name
-                                    if (!name.isNullOrBlank()) {
-                                        ConfigBuilder.saveTemplate("chains", name, json.encodeToString(editingChain))
-                                        isDirty = false
-                                        reload()
-                                    }
-                                },
-                                enabled = isDirty,
-                                type = SaaSButtonType.ACTION
-                            )
                         }
                     }
-                    Spacer(Modifier.height(Spacing.xl))
-                    
-                    ChainVisualEditor(
-                        chain = editingChain!!,
-                        onUpdate = { 
-                            editingChain = it
-                            isDirty = true
-                        }
-                    )
-                } else {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        EmptyState(
-                            title = "No chain selected",
-                            description = "Select a chain on the left to edit its hops and nodes.",
-                            icon = Icons.Default.LinkOff
-                        )
-                    }
-                }
                 }
             }
-        }
         }
 
         if (showCreateDialog) {
@@ -207,25 +214,25 @@ class ChainsScreen(
                 Text(
                     "Enter a unique name for the chain template.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = sc.textMuted
+                    color = sc.textMuted,
                 )
                 Spacer(Modifier.height(Spacing.lg))
                 SaaSTextField(
                     value = newChainName,
                     onValueChange = { newChainName = it },
                     label = "Chain Name",
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(Spacing.xl))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     SaaSButton(
                         text = "Cancel",
                         onClick = { showCreateDialog = false },
-                        type = SaaSButtonType.SECONDARY
+                        type = SaaSButtonType.SECONDARY,
                     )
                     Spacer(Modifier.width(Spacing.md))
                     SaaSButton(
@@ -240,7 +247,7 @@ class ChainsScreen(
                             }
                         },
                         enabled = newChainName.isNotBlank(),
-                        type = SaaSButtonType.PRIMARY
+                        type = SaaSButtonType.PRIMARY,
                     )
                 }
             }
@@ -257,7 +264,7 @@ class ChainsScreen(
                     deleteTarget = null
                     reload()
                 },
-                onDismiss = { deleteTarget = null }
+                onDismiss = { deleteTarget = null },
             )
         }
     }
@@ -267,24 +274,25 @@ class ChainsScreen(
         name: String,
         isSelected: Boolean,
         onClick: () -> Unit,
-        onDelete: () -> Unit
+        onDelete: () -> Unit,
     ) {
         val sc = GostSemantics.colors
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = Spacing.xs)
-                .clip(RoundedCornerShape(GostRadius.sm))
-                .background(if (isSelected) sc.stateSelected else Color.Transparent)
-                .clickable { onClick() }
-                .padding(horizontal = Spacing.lg, vertical = Spacing.md),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = Spacing.xs)
+                    .clip(RoundedCornerShape(GostRadius.sm))
+                    .background(if (isSelected) sc.stateSelected else Color.Transparent)
+                    .clickable { onClick() }
+                    .padding(horizontal = Spacing.lg, vertical = Spacing.md),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = Icons.Default.Link,
                 contentDescription = "Chain",
                 modifier = Modifier.size(16.dp),
-                tint = if (isSelected) sc.statusSuccess else sc.textMuted
+                tint = if (isSelected) sc.statusSuccess else sc.textMuted,
             )
             Spacer(Modifier.width(Spacing.md))
             Text(
@@ -292,7 +300,7 @@ class ChainsScreen(
                 modifier = Modifier.weight(1f),
                 fontSize = 13.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (isSelected) sc.textPrimary else sc.textSecondary
+                color = if (isSelected) sc.textPrimary else sc.textSecondary,
             )
             if (isSelected) {
                 IconTooltipButton(

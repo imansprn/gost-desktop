@@ -1,7 +1,7 @@
 package xyz.gobliggg.gost.navigation
 
-import java.util.UUID
 import xyz.gobliggg.gost.data.ServiceWizardDraftStore
+import java.util.UUID
 
 /**
  * ## Shell navigation transition model
@@ -31,19 +31,18 @@ fun newServiceWizardRoute(): String {
 }
 
 /** Stack id for a **fresh** New Auther editor route. */
-fun newAutherEditorRoute(): String {
-    return "auther-new-${UUID.randomUUID()}"
-}
+fun newAutherEditorRoute(): String = "auther-new-${UUID.randomUUID()}"
 
 /** Sidebar highlight: wizard sits on top of the route it was opened from (dashboard or services). */
 fun sidebarSelectedRoute(stack: List<String>): String {
     val top = stack.last()
     val under = stack.getOrNull(stack.size - 2)
     return when {
-        top.startsWith("service-new") || top.startsWith("service-edit:") -> when (under) {
-            "dashboard" -> "dashboard"
-            else -> "services"
-        }
+        top.startsWith("service-new") || top.startsWith("service-edit:") ->
+            when (under) {
+                "dashboard" -> "dashboard"
+                else -> "services"
+            }
         top.startsWith("auther-new") || top.startsWith("auther-edit:") -> "authers"
         else -> top
     }

@@ -59,14 +59,14 @@ val DarkTextPrimary = Color(0xFFE8EDF2)
 val DarkTextSecondary = Color(0xFFAAB4C0)
 val DarkTextTertiary = Color(0xFF8F9BAA)
 val DarkTextSlate = Color(0xFF64748B) // Standard SaaS muted slate
-val DarkTextDim = Color(0xFF94A3B8)   // Muted gray for placeholders
+val DarkTextDim = Color(0xFF94A3B8) // Muted gray for placeholders
 val DarkTextWatermark = Color(0xFF475569)
 
 val SaaSBackground = Color(0xFF040A12)
 val SaASSurface = Color(0xFF0C141E)
 val SaaSInputBg = Color(0xFF162032)
 val SaaSSelection = Color(0xFF0D2A3A)
-val SaASSlate = Color(0xFF1E293B)  // Secondary buttons / background elements
+val SaASSlate = Color(0xFF1E293B) // Secondary buttons / background elements
 val SaASAction = Color(0xFF122836) // "Save Config" teal/green container
 val SlateDot = Color(0xFF334155)
 val DeepNavyPanel = Color(0xFF0F172A)
@@ -106,3 +106,22 @@ val AmberStatusDark = Color(0xFFF57C00)
 val LightSurfaceVariant = Color(0xFFEDF1F7)
 val LightSurfaceElevated = Color(0xFFFFFFFF)
 val LightSurfaceCard = Color(0xFFF0F4F8)
+
+// ── Modernized Light Mode Tokens ──
+val LightBgGradientStart = Color(0xFFF5F3FF) // Soft Lavender
+val LightBgGradientEnd = Color(0xFFFFFFFF)
+val LightSidebarBg = Color(0xFFFFFFFF)
+val LightEditorBg = Color(0xFFFFFFFF)
+val LightEditorBorder = Color(0xFFE2E8F0) // Slate 200
+val LightHopCardBg = Color(0xFFF8FAFC) // Slate 50
+val LightInputBg = Color(0xFFFFFFFF)
+
+val LightTextSlate900 = Color(0xFF0F172A) // Near black
+val LightTextSlate500 = Color(0xFF64748B) // Muted
+val LightTextSlate400 = Color(0xFF94A3B8)
+
+val Violet500 = Color(0xFF8B5CF6) // Accent
+val Violet50 = Color(0xFFF5F3FF)
+
+val Emerald500 = Color(0xFF10B981) // Runtime indicator
+val Rose500 = Color(0xFFF43F5E) // Stop button

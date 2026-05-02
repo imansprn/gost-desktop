@@ -7,7 +7,6 @@ import org.junit.Test
 import xyz.gobliggg.gost.ui.theme.GostTheme
 
 class LogsScreenTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -20,11 +19,11 @@ class LogsScreenTest {
         }
 
         // Check header
-        composeTestRule.onNodeWithText("Console Logs").assertExists()
-        composeTestRule.onNodeWithText("REAL-TIME").assertExists()
-        
+        composeTestRule.onNodeWithText("Logs").assertExists()
+        composeTestRule.onNodeWithText("OBSERVABILITY").assertExists()
+
         // Check controls
         composeTestRule.onNodeWithText("Clear").assertExists()
-        composeTestRule.onNodeWithText("Pause").assertExists()
+        composeTestRule.onNodeWithText("Auto").assertExists()
     }
 }

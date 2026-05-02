@@ -16,22 +16,28 @@ class AutherFormScreen(
     private val onDone: () -> Unit = {},
     private val onCancel: () -> Unit = {},
 ) : Screen {
-
     override val key: ScreenKey = routeId
 
     @Composable
     override fun Content() {
-        val json = remember { Json { ignoreUnknownKeys = true; prettyPrint = true } }
-        val initialAuther = remember(editName) {
-            if (editName.isNullOrBlank()) return@remember null
-            val content = ConfigBuilder.readTemplate("authers", editName)
-            if (content.isNullOrBlank()) return@remember AutherDto(name = editName)
-            try {
-                json.decodeFromString(AutherDto.serializer(), content)
-            } catch (_: Exception) {
-                AutherDto(name = editName)
+        val json =
+            remember {
+                Json {
+                    ignoreUnknownKeys = true
+                    prettyPrint = true
+                }
             }
-        }
+        val initialAuther =
+            remember(editName) {
+                if (editName.isNullOrBlank()) return@remember null
+                val content = ConfigBuilder.readTemplate("authers", editName)
+                if (content.isNullOrBlank()) return@remember AutherDto(name = editName)
+                try {
+                    json.decodeFromString(AutherDto.serializer(), content)
+                } catch (_: Exception) {
+                    AutherDto(name = editName)
+                }
+            }
 
         AutherFormEditor(
             initialAuther = initialAuther,
@@ -48,4 +54,3 @@ class AutherFormScreen(
         )
     }
 }
-

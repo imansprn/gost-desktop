@@ -1,0 +1,26 @@
+# https://editorconfig.org
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{kt,kts}]
+indent_style = space
+indent_size = 4
+# Align with ktlint CLI / IDE Kotlin formatter
+max_line_length = 140
+
+# ktlint (https://pinterest.github.io/ktlint/latest/rules/configuration-ktlint/)
+ktlint_code_style = ktlint_official
+
+# Compose UI uses PascalCase @Composable functions — standard rule expects camelCase
+ktlint_standard_function-naming = disabled
+
+# Star imports are used across the codebase; avoiding mass explicit-import churn
+ktlint_standard_no-wildcard-imports = disabled

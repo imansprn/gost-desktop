@@ -4,7 +4,6 @@ import org.junit.Test
 import kotlin.test.assertNotNull
 
 class ServicesScreenModelTest {
-
     @Test
     fun `test state initialization`() {
         val model = ServicesScreenModel()

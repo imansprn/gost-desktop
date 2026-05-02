@@ -1,9 +1,9 @@
 package xyz.gobliggg.gost.ui.components
 
+import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.material3.Text
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import org.junit.Rule
@@ -11,7 +11,6 @@ import org.junit.Test
 import xyz.gobliggg.gost.ui.theme.GostTheme
 
 class SaaSLayoutsTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -22,7 +21,7 @@ class SaaSLayoutsTest {
                 SaaSScreenHeader(
                     title = "Main Title",
                     superTitle = "SUPER TITLE",
-                    subtitle = "This is a subtitle"
+                    subtitle = "This is a subtitle",
                 )
             }
         }
@@ -51,16 +50,16 @@ class SaaSLayoutsTest {
             GostTheme {
                 SaaSDialog(
                     title = "Test Dialog",
-                    onDismissRequest = { dismissed = true }
+                    onDismissRequest = { dismissed = true },
                 ) {
                     Text("Dialog Body")
                 }
             }
         }
-        
+
         composeTestRule.onNodeWithText("Test Dialog").assertExists()
         composeTestRule.onNodeWithText("Dialog Body").assertExists()
-        
+
         // Find and click close button (Icon button with "Close" content description)
         composeTestRule.onNodeWithContentDescription("Close").performClick()
         kotlin.test.assertTrue(dismissed)
@@ -76,7 +75,7 @@ class SaaSLayoutsTest {
                 SaaSToggleGroup(
                     options = options,
                     selectedOption = selected,
-                    onOptionSelected = { selected = it }
+                    onOptionSelected = { selected = it },
                 )
             }
         }

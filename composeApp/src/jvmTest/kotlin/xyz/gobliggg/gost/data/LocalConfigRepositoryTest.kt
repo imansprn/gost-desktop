@@ -7,10 +7,8 @@ import xyz.gobliggg.gost.model.AppSettings
 import xyz.gobliggg.gost.model.GostRuntimeConfig
 import java.io.File
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class LocalConfigRepositoryTest {
-
     @get:Rule
     val tempFolder = TemporaryFolder()
 
@@ -25,14 +23,15 @@ class LocalConfigRepositoryTest {
     fun `test save and load config`() {
         val baseDir = tempFolder.newFolder()
         val repo = LocalConfigRepository(baseDir)
-        
-        val customSettings = AppSettings(
-            gostRuntime = GostRuntimeConfig(binaryPath = "/custom/path")
-        )
+
+        val customSettings =
+            AppSettings(
+                gostRuntime = GostRuntimeConfig(binaryPath = "/custom/path"),
+            )
         val config = LocalConfig(settings = customSettings)
-        
+
         repo.save(config)
-        
+
         val loaded = repo.load()
         assertEquals("/custom/path", loaded.settings.gostRuntime.binaryPath)
     }
@@ -42,10 +41,10 @@ class LocalConfigRepositoryTest {
         val baseDir = tempFolder.newFolder()
         val configFile = File(baseDir, "config.json")
         configFile.writeText("{ corrupted: true")
-        
+
         val repo = LocalConfigRepository(baseDir)
         val config = repo.load()
-        
+
         assertEquals(LocalConfig(), config)
     }
 }

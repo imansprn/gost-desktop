@@ -12,32 +12,35 @@ data class RuntimeUiState(
     val binaryPath: String = "",
     val workingDirectory: String = "",
     val autoStart: Boolean = false,
-    val pathError: String? = null
+    val pathError: String? = null,
 )
 
 class ConnectionScreenModel : ScreenModel {
-
     private val _state = MutableStateFlow(RuntimeUiState())
     val state: StateFlow<RuntimeUiState> = _state.asStateFlow()
 
     init {
         val runtime = AppState.settings.value.gostRuntime
-        _state.value = RuntimeUiState(
-            binaryPath = runtime.binaryPath,
-            workingDirectory = runtime.workingDirectory,
-            autoStart = runtime.autoStart
-        )
+        _state.value =
+            RuntimeUiState(
+                binaryPath = runtime.binaryPath,
+                workingDirectory = runtime.workingDirectory,
+                autoStart = runtime.autoStart,
+            )
     }
 
     fun updateBinaryPath(path: String) {
-        val error = if (path.isBlank()) {
-            "Path is required"
-        } else {
-            val file = File(path)
-            if (!file.exists() || !file.canExecute()) {
-                "File does not exist or is not executable"
-            } else null
-        }
+        val error =
+            if (path.isBlank()) {
+                "Path is required"
+            } else {
+                val file = File(path)
+                if (!file.exists() || !file.canExecute()) {
+                    "File does not exist or is not executable"
+                } else {
+                    null
+                }
+            }
         _state.value = _state.value.copy(binaryPath = path, pathError = error)
     }
 
@@ -56,14 +59,15 @@ class ConnectionScreenModel : ScreenModel {
 
         AppState.updateSettings {
             it.copy(
-                gostRuntime = GostRuntimeConfig(
-                    binaryPath = s.binaryPath,
-                    workingDirectory = s.workingDirectory,
-                    autoStart = s.autoStart
-                )
+                gostRuntime =
+                    GostRuntimeConfig(
+                        binaryPath = s.binaryPath,
+                        workingDirectory = s.workingDirectory,
+                        autoStart = s.autoStart,
+                    ),
             )
         }
-        
+
         if (AppState.isRuntimeValid.value) {
             onConnected()
         }

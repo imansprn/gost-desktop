@@ -11,21 +11,20 @@ import xyz.gobliggg.gost.ui.theme.GostTheme
 import kotlin.test.assertEquals
 
 class SaaSInputsTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
     @Test
     fun testSaaSTextFieldInput() {
         var text by mutableStateOf("")
-        
+
         composeTestRule.setContent {
             GostTheme {
                 SaaSTextField(
                     label = "Username",
                     value = text,
                     onValueChange = { text = it },
-                    placeholder = "Enter username"
+                    placeholder = "Enter username",
                 )
             }
         }
@@ -46,5 +45,5 @@ class SaaSInputsTest {
     fun testDropdownFieldSelection() {
         // ... test logic ...
     }
-    */
+     */
 }

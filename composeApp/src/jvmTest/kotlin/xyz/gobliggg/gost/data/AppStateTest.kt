@@ -8,7 +8,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class AppStateTest {
-
     @Before
     fun setup() {
         if (!AppState.isInitialized.value) {
@@ -18,15 +17,10 @@ class AppStateTest {
 
     @Test
     fun `test settings update`() {
-        // Since AppState is a singleton object, we test the public interface.
-        // We might need to handle the fact that it's already initialized in some environments.
-        
-        val initialTheme = AppState.settings.value.theme
-        val newTheme = if (initialTheme == ThemeMode.DARK) ThemeMode.LIGHT else ThemeMode.DARK
-        
-        AppState.updateSettings { it.copy(theme = newTheme) }
-        
-        assertEquals(newTheme, AppState.settings.value.theme)
+        val initial = AppState.settings.value.sidebarCollapsed
+        AppState.updateSettings { it.copy(sidebarCollapsed = !initial) }
+        assertEquals(!initial, AppState.settings.value.sidebarCollapsed)
+        assertEquals(ThemeMode.DARK, AppState.settings.value.theme)
     }
 
     @Test
@@ -43,11 +37,10 @@ class AppStateTest {
     }
 
     @Test
-    fun `test isDarkTheme logic`() {
-        AppState.updateSettings { it.copy(theme = ThemeMode.DARK) }
+    fun `test theme is always dark`() {
         assertTrue(AppState.isDarkTheme)
-        
         AppState.updateSettings { it.copy(theme = ThemeMode.LIGHT) }
-        kotlin.test.assertFalse(AppState.isDarkTheme)
+        assertTrue(AppState.isDarkTheme)
+        assertEquals(ThemeMode.DARK, AppState.settings.value.theme)
     }
 }

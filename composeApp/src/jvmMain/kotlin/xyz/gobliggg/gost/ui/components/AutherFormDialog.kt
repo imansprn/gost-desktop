@@ -13,8 +13,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -69,6 +69,7 @@ fun AutherFormEditor(
 
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     val passwordVisibility = remember { mutableStateMapOf<Int, Boolean>() }
+    val sc = GostSemantics.colors
 
     val leftPanel: @Composable ColumnScope.() -> Unit = {
         SaaSTableHeader("TEMPLATE TYPE")
@@ -82,7 +83,7 @@ fun AutherFormEditor(
                 onClick = {
                     isPluginMode = false
                     focusManager.clearFocus()
-                }
+                },
             )
             TypeSelectTab(
                 label = "External Plugin",
@@ -91,7 +92,7 @@ fun AutherFormEditor(
                 onClick = {
                     isPluginMode = true
                     focusManager.clearFocus()
-                }
+                },
             )
         }
 
@@ -100,20 +101,24 @@ fun AutherFormEditor(
         SaaSTableHeader("SUMMARY")
         Spacer(Modifier.height(Spacing.xs))
         Text(
-            if (isPluginMode) "Connecting to $pluginType at $pluginAddr"
-            else "Managing ${auths.size} user credentials",
-            color = Color.White.copy(0.5f),
-            fontSize = 12.sp
+            if (isPluginMode) {
+                "Connecting to $pluginType at $pluginAddr"
+            } else {
+                "Managing ${auths.size} user credentials"
+            },
+            color = sc.textSecondary.copy(alpha = 0.85f),
+            fontSize = 12.sp,
         )
     }
 
     val onSaveInternal = {
         focusManager.clearFocus()
-        val result = AutherDto(
-            name = name,
-            auths = if (!isPluginMode) auths else null,
-            plugin = if (isPluginMode) PluginDto(type = pluginType, addr = pluginAddr, token = pluginToken) else null
-        )
+        val result =
+            AutherDto(
+                name = name,
+                auths = if (!isPluginMode) auths else null,
+                plugin = if (isPluginMode) PluginDto(type = pluginType, addr = pluginAddr, token = pluginToken) else null,
+            )
         onSave(result)
     }
 
@@ -127,7 +132,7 @@ fun AutherFormEditor(
                 value = name,
                 onValueChange = { name = it },
                 placeholder = "admin-auth",
-                helperText = "Unique name to reference this auther"
+                helperText = "Unique name to reference this auther",
             )
 
             Spacer(Modifier.height(Spacing.xl))
@@ -140,7 +145,7 @@ fun AutherFormEditor(
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         SaaSTextField(
                             value = auth.username ?: "",
@@ -150,7 +155,7 @@ fun AutherFormEditor(
                                 auths = next
                             },
                             modifier = Modifier.weight(0.45f),
-                            placeholder = "Username"
+                            placeholder = "Username",
                         )
                         SaaSTextField(
                             value = auth.password ?: "",
@@ -161,20 +166,34 @@ fun AutherFormEditor(
                             },
                             modifier = Modifier.weight(0.45f),
                             placeholder = "Password",
-                            visualTransformation = if (passwordVisibility[index] == true) VisualTransformation.None else PasswordVisualTransformation(),
+                            visualTransformation =
+                                if (passwordVisibility[index] ==
+                                    true
+                                ) {
+                                    VisualTransformation.None
+                                } else {
+                                    PasswordVisualTransformation()
+                                },
                             trailingIcon = {
                                 IconButton(onClick = {
                                     passwordVisibility[index] = !(passwordVisibility[index] ?: false)
                                     focusManager.clearFocus()
                                 }) {
                                     Icon(
-                                        imageVector = if (passwordVisibility[index] == true) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                        imageVector =
+                                            if (passwordVisibility[index] ==
+                                                true
+                                            ) {
+                                                Icons.Default.VisibilityOff
+                                            } else {
+                                                Icons.Default.Visibility
+                                            },
                                         contentDescription = null,
                                         modifier = Modifier.size(16.dp),
-                                        tint = Color.White.copy(0.4f)
+                                        tint = sc.textMuted,
                                     )
                                 }
-                            }
+                            },
                         )
                         IconButton(onClick = {
                             if (auths.size > 1) {
@@ -200,7 +219,7 @@ fun AutherFormEditor(
                     },
                     type = SaaSButtonType.SECONDARY,
                     icon = Icons.Default.Add,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             } else {
                 SaaSTableHeader("PLUGIN SETTINGS")
@@ -213,20 +232,19 @@ fun AutherFormEditor(
                             Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(if (active) SaaSSelection else SaaSInputBg)
-                                .border(1.dp, if (active) GreenBright else Color.White.copy(0.05f), RoundedCornerShape(8.dp))
+                                .background(if (active) sc.stateSelected else sc.surfaceInput)
+                                .border(1.dp, if (active) sc.statusSuccess else sc.borderSubtle, RoundedCornerShape(8.dp))
                                 .clickable {
                                     pluginType = type
                                     focusManager.clearFocus()
-                                }
-                                .padding(vertical = 12.dp),
-                            contentAlignment = Alignment.Center
+                                }.padding(vertical = 12.dp),
+                            contentAlignment = Alignment.Center,
                         ) {
                             Text(
                                 type.uppercase(),
-                                color = if (active) GreenBright else Color.White.copy(0.5f),
+                                color = if (active) sc.statusSuccess else sc.textSecondary,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp
+                                fontSize = 12.sp,
                             )
                         }
                     }
@@ -239,7 +257,7 @@ fun AutherFormEditor(
                     value = pluginAddr,
                     onValueChange = { pluginAddr = it },
                     placeholder = "127.0.0.1:9000",
-                    helperText = "Network address of the plugin"
+                    helperText = "Network address of the plugin",
                 )
                 Spacer(Modifier.height(Spacing.md))
                 SaaSTextField(
@@ -247,7 +265,7 @@ fun AutherFormEditor(
                     value = pluginToken,
                     onValueChange = { pluginToken = it },
                     placeholder = "Optional token...",
-                    helperText = "Bearer token for gRPC/HTTP requests"
+                    helperText = "Bearer token for gRPC/HTTP requests",
                 )
             }
 
@@ -291,20 +309,22 @@ fun AutherFormEditor(
         AutherFormVariant.FullScreen -> {
             Row(modifier = modifier.fillMaxSize()) {
                 Column(
-                    modifier = Modifier
-                        .width(sidePanelWidth)
-                        .fillMaxHeight()
-                        .background(GostSemantics.colors.surfacePanel)
-                        .padding(Spacing.lg),
+                    modifier =
+                        Modifier
+                            .width(sidePanelWidth)
+                            .fillMaxHeight()
+                            .background(GostSemantics.colors.surfacePanel)
+                            .padding(Spacing.lg),
                 ) {
                     leftPanel()
                 }
                 VerticalDivider(thickness = 1.dp, color = GostSemantics.colors.borderSubtle)
                 Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .padding(Spacing.xl),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .padding(Spacing.xl),
                 ) {
                     SaaSScreenHeader(
                         superTitle = "ACCESS",
@@ -323,20 +343,22 @@ private fun TypeSelectTab(
     label: String,
     description: String,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
+    val sc = GostSemantics.colors
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(if (isSelected) SaaSSelection else Color.Transparent)
-            .border(1.dp, if (isSelected) GreenBright.copy(0.3f) else Color.Transparent, RoundedCornerShape(12.dp))
-            .clickable { onClick() }
-            .padding(Spacing.md)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(if (isSelected) sc.stateSelected else Color.Transparent)
+                .border(1.dp, if (isSelected) sc.statusSuccess.copy(alpha = 0.3f) else Color.Transparent, RoundedCornerShape(12.dp))
+                .clickable { onClick() }
+                .padding(Spacing.md),
     ) {
         Column {
-            Text(label, color = if (isSelected) Color.White else Color.White.copy(0.6f), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text(description, color = Color.White.copy(0.4f), fontSize = 11.sp)
+            Text(label, color = if (isSelected) sc.textPrimary else sc.textSecondary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(description, color = sc.textMuted, fontSize = 11.sp)
         }
     }
 }

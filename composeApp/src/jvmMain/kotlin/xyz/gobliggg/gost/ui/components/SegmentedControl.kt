@@ -29,10 +29,11 @@ fun <T> SegmentedControl(
 ) {
     val sc = GostSemantics.colors
     Row(
-        modifier = modifier
-            .background(sc.surfaceInput, RoundedCornerShape(GostRadius.md))
-            .border(1.dp, sc.borderSubtle, RoundedCornerShape(GostRadius.md))
-            .padding(Spacing.xs),
+        modifier =
+            modifier
+                .background(sc.surfaceInput, RoundedCornerShape(GostRadius.md))
+                .border(1.dp, sc.borderSubtle, RoundedCornerShape(GostRadius.md))
+                .padding(Spacing.xs),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
@@ -46,12 +47,12 @@ fun <T> SegmentedControl(
                 color = fg,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                modifier = Modifier
-                    .background(bg, RoundedCornerShape(GostRadius.sm))
-                    .clickable(enabled = enabled) { onSelect(opt) }
-                    .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+                modifier =
+                    Modifier
+                        .background(bg, RoundedCornerShape(GostRadius.sm))
+                        .clickable(enabled = enabled) { onSelect(opt) }
+                        .padding(horizontal = Spacing.md, vertical = Spacing.sm),
             )
         }
     }
 }
-

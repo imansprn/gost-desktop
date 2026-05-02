@@ -1,21 +1,19 @@
 package xyz.gobliggg.gost.screen.serviceform
-import xyz.gobliggg.gost.ui.components.*
-
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import xyz.gobliggg.gost.ui.GlobalWindowShortcuts
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -24,13 +22,12 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
+import xyz.gobliggg.gost.ui.GlobalWindowShortcuts
+import xyz.gobliggg.gost.ui.components.*
 import xyz.gobliggg.gost.ui.components.ChainFormDialog
-
 import xyz.gobliggg.gost.ui.components.SearchableStringDropdown
-import xyz.gobliggg.gost.ui.theme.Spacing
 import xyz.gobliggg.gost.ui.theme.*
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import xyz.gobliggg.gost.ui.theme.Spacing
 
 class ServiceFormScreen(
     /** Matches the shell stack segment so Voyager does not reuse this screen's model for another wizard. */
@@ -39,10 +36,7 @@ class ServiceFormScreen(
     private val onDone: () -> Unit = {},
     private val onCancel: () -> Unit = {},
 ) : Screen {
-
     override val key: ScreenKey = routeId
-
-
 
     @Composable
     override fun Content() {
@@ -75,7 +69,7 @@ class ServiceFormScreen(
             ) {
                 SaaSScreenHeader(
                     superTitle = "WIZARD",
-                    title = if (state.isEditMode) "Edit Tunnel" else "New Tunnel"
+                    title = if (state.isEditMode) "Edit Tunnel" else "New Tunnel",
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
@@ -86,10 +80,11 @@ class ServiceFormScreen(
                 Spacer(Modifier.height(Spacing.xl))
 
                 Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState()),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState()),
                 ) {
                     when (state.currentStep) {
                         0 -> Step1Basic(state, model)
@@ -111,14 +106,14 @@ class ServiceFormScreen(
                         text = if (state.currentStep == 0) "Cancel" else "Back",
                         onClick = { if (state.currentStep == 0) onCancel() else model.prevStep() },
                         type = SaaSButtonType.SECONDARY,
-                        icon = if (state.currentStep == 0) null else Icons.Default.ArrowBack
+                        icon = if (state.currentStep == 0) null else Icons.Default.ArrowBack,
                     )
                     if (state.currentStep < 2) {
                         SaaSButton(
                             text = "Next",
                             onClick = { model.nextStep() },
                             type = SaaSButtonType.PRIMARY,
-                            icon = Icons.Default.ArrowForward
+                            icon = Icons.Default.ArrowForward,
                         )
                     } else {
                         SaaSButton(
@@ -127,7 +122,7 @@ class ServiceFormScreen(
                             enabled = !state.isSubmitting,
                             loading = state.isSubmitting,
                             type = SaaSButtonType.ACTION,
-                            icon = Icons.Default.Save
+                            icon = Icons.Default.Save,
                         )
                     }
                 }
@@ -136,11 +131,12 @@ class ServiceFormScreen(
             // ── Right: Live Preview ──
             VerticalDivider(thickness = 1.dp, color = sc.borderSubtle)
             Column(
-                modifier = Modifier
-                    .width(320.dp)
-                    .fillMaxHeight()
-                    .background(sc.surfacePanel)
-                    .padding(Spacing.lg),
+                modifier =
+                    Modifier
+                        .width(320.dp)
+                        .fillMaxHeight()
+                        .background(sc.surfacePanel)
+                        .padding(Spacing.lg),
             ) {
                 SaaSTableHeader("LIVE PREVIEW")
                 Spacer(Modifier.height(8.dp))
@@ -150,13 +146,14 @@ class ServiceFormScreen(
                     color = Cyan300,
                     fontSize = 11.sp,
                     fontFamily = MonoFontFamily,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(sc.surfaceApp)
-                        .border(1.dp, sc.borderSubtle, RoundedCornerShape(12.dp))
-                        .padding(12.dp)
-                        .verticalScroll(rememberScrollState()),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(sc.surfaceApp)
+                            .border(1.dp, sc.borderSubtle, RoundedCornerShape(12.dp))
+                            .padding(12.dp)
+                            .verticalScroll(rememberScrollState()),
                 )
             }
         }
@@ -186,27 +183,32 @@ private fun StepIndicator(
     val sc = GostSemantics.colors
     val isActive = step == currentStep
     val isDone = step < currentStep
-    val color = when {
-        isDone -> GreenBright
-        isActive -> Cyan300
-        else -> sc.textMuted
-    }
+    val color =
+        when {
+            isDone -> sc.statusSuccess
+            isActive -> sc.focusRing
+            else -> sc.textMuted
+        }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .clickable {
-                onStepClick(step)
-                focusManager.clearFocus()
-            },
+        modifier =
+            Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .clickable {
+                    onStepClick(step)
+                    focusManager.clearFocus()
+                },
     ) {
         Box(
             Modifier
                 .size(24.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(
-                    if (isActive || isDone) SaaSSelection
-                    else SaaSInputBg,
+                    if (isActive || isDone) {
+                        sc.stateSelected
+                    } else {
+                        sc.surfaceInput
+                    },
                 ),
             contentAlignment = Alignment.Center,
         ) {
@@ -223,7 +225,10 @@ private fun StepIndicator(
 }
 
 @Composable
-private fun Step1Basic(state: ServiceFormUiState, model: ServiceFormScreenModel) {
+private fun Step1Basic(
+    state: ServiceFormUiState,
+    model: ServiceFormScreenModel,
+) {
     SaaSTextField(
         value = state.name,
         onValueChange = model::updateName,
@@ -244,7 +249,10 @@ private fun Step1Basic(state: ServiceFormUiState, model: ServiceFormScreenModel)
 }
 
 @Composable
-private fun Step2Protocol(state: ServiceFormUiState, model: ServiceFormScreenModel) {
+private fun Step2Protocol(
+    state: ServiceFormUiState,
+    model: ServiceFormScreenModel,
+) {
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     var passwordVisible by remember { mutableStateOf(false) }
 
@@ -270,7 +278,7 @@ private fun Step2Protocol(state: ServiceFormUiState, model: ServiceFormScreenMod
                 onOpen()
                 focusManager.clearFocus()
             },
-            shape = RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(8.dp),
         ) {
             Text(state.handlerType, fontSize = 13.sp)
         }
@@ -338,7 +346,12 @@ private fun Step2Protocol(state: ServiceFormUiState, model: ServiceFormScreenMod
 }
 
 @Composable
-private fun Step3Advanced(state: ServiceFormUiState, model: ServiceFormScreenModel, onCreateChain: () -> Unit) {
+private fun Step3Advanced(
+    state: ServiceFormUiState,
+    model: ServiceFormScreenModel,
+    onCreateChain: () -> Unit,
+) {
+    val sc = GostSemantics.colors
     Text(
         "Forwarder / remote targets (optional)",
         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -365,11 +378,11 @@ private fun Step3Advanced(state: ServiceFormUiState, model: ServiceFormScreenMod
                 modifier = Modifier.weight(0.38f),
                 singleLine = true,
                 shape = RoundedCornerShape(8.dp),
-                textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = sc.textPrimary),
                 placeholder = {
-                    Text("Name", color = DarkTextDim, style = MaterialTheme.typography.bodyMedium)
+                    Text("Name", color = sc.textMuted, style = MaterialTheme.typography.bodyMedium)
                 },
-                colors = saasTextFieldColors()
+                colors = saasTextFieldColors(),
             )
             OutlinedTextField(
                 value = nodeAddr,
@@ -377,15 +390,15 @@ private fun Step3Advanced(state: ServiceFormUiState, model: ServiceFormScreenMod
                 modifier = Modifier.weight(0.52f),
                 singleLine = true,
                 shape = RoundedCornerShape(8.dp),
-                textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = sc.textPrimary),
                 placeholder = {
                     Text(
                         "192.168.1.104:9014",
-                        color = DarkTextDim,
+                        color = sc.textMuted,
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 },
-                colors = saasTextFieldColors()
+                colors = saasTextFieldColors(),
             )
             TextButton(onClick = { model.removeForwarderRow(index) }) {
                 Text("Remove", fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
@@ -436,9 +449,9 @@ private fun Step3Advanced(state: ServiceFormUiState, model: ServiceFormScreenMod
             )
             IconButton(
                 onClick = { model.removeMetadataRow(index) },
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(24.dp),
             ) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.White.copy(0.4f), modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = sc.textMuted, modifier = Modifier.size(16.dp))
             }
         }
         Spacer(Modifier.height(8.dp))
@@ -451,7 +464,6 @@ private fun Step3Advanced(state: ServiceFormUiState, model: ServiceFormScreenMod
         Text("+ Add protocol flag", fontSize = 12.sp)
     }
     Spacer(Modifier.height(24.dp))
-
 
     NullableDropdown("Chain", state.availableChains, state.chainRef) { model.updateChainRef(it) }
     Spacer(Modifier.height(8.dp))
@@ -473,7 +485,12 @@ private fun Step3Advanced(state: ServiceFormUiState, model: ServiceFormScreenMod
 }
 
 @Composable
-private fun NullableDropdown(label: String, options: List<String>, selected: String?, onSelect: (String?) -> Unit) {
+private fun NullableDropdown(
+    label: String,
+    options: List<String>,
+    selected: String?,
+    onSelect: (String?) -> Unit,
+) {
     Text(
         label,
         color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -12,8 +12,11 @@ fun formatBytes(bytes: Long): String {
         value /= 1024
         unitIndex++
     }
-    return if (unitIndex == 0) "$bytes B"
-    else "%.1f %s".format(value, units[unitIndex])
+    return if (unitIndex == 0) {
+        "$bytes B"
+    } else {
+        "%.1f %s".format(value, units[unitIndex])
+    }
 }
 
 /**
@@ -30,18 +33,19 @@ fun formatDuration(seconds: Long): String {
 /**
  * Truncate a string with ellipsis if it exceeds maxLength.
  */
-fun String.truncate(maxLength: Int): String {
-    return if (length <= maxLength) this
-    else take(maxLength - 1) + "…"
-}
+fun String.truncate(maxLength: Int): String =
+    if (length <= maxLength) {
+        this
+    } else {
+        take(maxLength - 1) + "…"
+    }
 
 /**
  * Extract the host portion from a URL string.
  */
-fun extractHost(url: String): String {
-    return url
+fun extractHost(url: String): String =
+    url
         .removePrefix("http://")
         .removePrefix("https://")
         .split("/")
         .firstOrNull() ?: url
-}

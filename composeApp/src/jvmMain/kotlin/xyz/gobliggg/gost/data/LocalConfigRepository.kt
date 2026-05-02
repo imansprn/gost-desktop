@@ -8,29 +8,30 @@ import java.io.File
 
 @Serializable
 data class LocalConfig(
-    val settings: AppSettings = AppSettings()
+    val settings: AppSettings = AppSettings(),
 )
 
 class LocalConfigRepository(
-    private val baseDir: File = File(System.getProperty("user.home"), ".gost-manager")
+    private val baseDir: File = File(System.getProperty("user.home"), ".gost-manager"),
 ) {
-    private val json = Json { 
-        prettyPrint = true
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-    }
-    
+    private val json =
+        Json {
+            prettyPrint = true
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+        }
+
     private val configDir = baseDir
     private val configFile = File(configDir, "config.json")
-    
+
     init {
         if (!configDir.exists()) {
             configDir.mkdirs()
         }
     }
-    
-    fun load(): LocalConfig {
-        return try {
+
+    fun load(): LocalConfig =
+        try {
             if (configFile.exists()) {
                 json.decodeFromString<LocalConfig>(configFile.readText())
             } else {
@@ -40,8 +41,7 @@ class LocalConfigRepository(
             println("Failed to load config: ${e.message}")
             LocalConfig()
         }
-    }
-    
+
     fun save(config: LocalConfig) {
         try {
             val text = json.encodeToString(config)

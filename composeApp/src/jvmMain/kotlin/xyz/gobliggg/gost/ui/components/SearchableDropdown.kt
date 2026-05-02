@@ -39,9 +39,10 @@ fun SearchableStringDropdown(
 ) {
     var expanded by remember { mutableStateOf(false) }
     var filter by remember { mutableStateOf("") }
-    val filtered = remember(filter, options) {
-        options.filter { it.contains(filter, ignoreCase = true) }
-    }
+    val filtered =
+        remember(filter, options) {
+            options.filter { it.contains(filter, ignoreCase = true) }
+        }
     LaunchedEffect(expanded) {
         if (!expanded) filter = ""
     }
@@ -56,11 +57,17 @@ fun SearchableStringDropdown(
                 OutlinedTextField(
                     value = filter,
                     onValueChange = { filter = it },
-                    placeholder = { Text(searchPlaceholder, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline) },
+                    placeholder = {
+                        Text(
+                            searchPlaceholder,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline,
+                        )
+                    },
                     singleLine = true,
                     textStyle = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-                    colors = saasTextFieldColors()
+                    colors = saasTextFieldColors(),
                 )
                 HorizontalDivider()
                 Column(Modifier.heightIn(max = menuMaxHeight.dp).verticalScroll(rememberScrollState())) {

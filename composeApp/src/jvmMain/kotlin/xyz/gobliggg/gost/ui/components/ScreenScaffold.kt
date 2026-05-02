@@ -18,9 +18,10 @@ fun ScreenScaffold(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(Spacing.xl)
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(Spacing.xl),
     ) {
         header()
         messages()
@@ -28,4 +29,3 @@ fun ScreenScaffold(
         content()
     }
 }
-

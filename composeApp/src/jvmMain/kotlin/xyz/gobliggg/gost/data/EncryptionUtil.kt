@@ -22,11 +22,12 @@ object EncryptionUtil {
 
     // Derive a stable passphrase from machine properties
     private val masterPassphrase: CharArray by lazy {
-        val props = listOf(
-            System.getProperty("user.name", "gost"),
-            System.getProperty("os.name", "desktop"),
-            System.getProperty("user.home", "/tmp"),
-        )
+        val props =
+            listOf(
+                System.getProperty("user.name", "gost"),
+                System.getProperty("os.name", "desktop"),
+                System.getProperty("user.home", "/tmp"),
+            )
         "gost-manager-${props.joinToString("-")}".toCharArray()
     }
 
@@ -58,7 +59,10 @@ object EncryptionUtil {
         return String(cipher.doFinal(ciphertext), Charsets.UTF_8)
     }
 
-    private fun deriveKey(passphrase: CharArray, salt: ByteArray): SecretKeySpec {
+    private fun deriveKey(
+        passphrase: CharArray,
+        salt: ByteArray,
+    ): SecretKeySpec {
         val factory = SecretKeyFactory.getInstance(KEY_ALGORITHM)
         val spec = PBEKeySpec(passphrase, salt, ITERATION_COUNT, KEY_LENGTH)
         val secretKey = factory.generateSecret(spec)

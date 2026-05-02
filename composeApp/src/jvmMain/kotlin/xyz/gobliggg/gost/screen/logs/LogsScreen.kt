@@ -1,22 +1,19 @@
 package xyz.gobliggg.gost.screen.logs
-import xyz.gobliggg.gost.ui.components.*
-
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -24,13 +21,14 @@ import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
-import xyz.gobliggg.gost.data.ServiceRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import xyz.gobliggg.gost.ui.theme.Spacing
+import xyz.gobliggg.gost.data.ServiceRegistry
+import xyz.gobliggg.gost.ui.components.*
 import xyz.gobliggg.gost.ui.theme.*
+import xyz.gobliggg.gost.ui.theme.Spacing
 
 private data class LogTerminalPalette(
     val background: Color,
@@ -46,13 +44,14 @@ private fun LogLevelFilterChip(
     onToggle: () -> Unit,
 ) {
     val sc = GostSemantics.colors
-    val (activeBg, activeFg) = when (levelLabel) {
-        "DEBUG" -> sc.surfaceCard to Color.White.copy(alpha = 0.7f)
-        "INFO" -> sc.stateSelected to sc.statusSuccess
-        "WARN" -> Color(0xFF4B2E0E) to sc.statusWarning
-        "ERROR" -> Color(0xFF451313) to sc.statusError
-        else -> sc.surfaceCard to Color.White
-    }
+    val (activeBg, activeFg) =
+        when (levelLabel) {
+            "DEBUG" -> sc.surfaceCard to Color.White.copy(alpha = 0.7f)
+            "INFO" -> sc.stateSelected to sc.statusSuccess
+            "WARN" -> Color(0xFF4B2E0E) to sc.statusWarning
+            "ERROR" -> Color(0xFF451313) to sc.statusError
+            else -> sc.surfaceCard to Color.White
+        }
     val inactiveBg = sc.surfaceInput
     val inactiveFg = Color.White.copy(alpha = 0.4f)
     Box(
@@ -116,10 +115,11 @@ private fun findBracketLevelInLine(line: String): Pair<String, String>? {
     for (match in bracketLevelPattern.findAll(line)) {
         val raw = match.groupValues[1]
         val canon = normalizeToCanonicalLevel(raw) ?: continue
-        val remainder = buildString {
-            append(line.substring(0, match.range.first))
-            append(line.substring(match.range.last + 1))
-        }.trim()
+        val remainder =
+            buildString {
+                append(line.substring(0, match.range.first))
+                append(line.substring(match.range.last + 1))
+            }.trim()
         return Pair(canon, if (remainder.isNotEmpty()) remainder else line)
     }
     return null
@@ -136,9 +136,10 @@ class LogsScreenModel : ScreenModel {
         screenModelScope.launch {
             // Load available services for filter dropdown
             ServiceRegistry.services.collect { services ->
-                _state.value = _state.value.copy(
-                    availableServices = services.map { it.id },
-                )
+                _state.value =
+                    _state.value.copy(
+                        availableServices = services.map { it.id },
+                    )
             }
         }
         screenModelScope.launch {
@@ -146,15 +147,20 @@ class LogsScreenModel : ScreenModel {
                 val line = parseGostLog(event.text, event.serviceId, event.timestamp)
                 val s = _state.value
                 val newEntries = (s.entries + line).takeLast(maxLines)
-                _state.value = s.copy(
-                    entries = newEntries,
-                    filteredEntries = applyFilterSync(newEntries, s.levelFilter, s.serviceFilter, s.searchQuery),
-                )
+                _state.value =
+                    s.copy(
+                        entries = newEntries,
+                        filteredEntries = applyFilterSync(newEntries, s.levelFilter, s.serviceFilter, s.searchQuery),
+                    )
             }
         }
     }
 
-    private fun parseGostLog(text: String, serviceId: String, systemTime: Long): LogEntry {
+    private fun parseGostLog(
+        text: String,
+        serviceId: String,
+        systemTime: Long,
+    ): LogEntry {
         var timestamp = ""
         var level = "info"
         var msg = text
@@ -225,18 +231,15 @@ class LogsScreenModel : ScreenModel {
         levelFilter: Set<String>,
         serviceFilter: String?,
         searchQuery: String,
-    ): List<LogEntry> {
-        return entries.filter { entry ->
+    ): List<LogEntry> =
+        entries.filter { entry ->
             levelFilter.contains(entry.level.lowercase()) &&
                 (serviceFilter == null || entry.service == serviceFilter) &&
                 (searchQuery.isBlank() || entry.raw.contains(searchQuery, ignoreCase = true))
         }
-    }
 }
 
 class LogsScreen : Screen {
-
-
     @Composable
     override fun Content() {
         val model = rememberScreenModel { LogsScreenModel() }
@@ -251,24 +254,24 @@ class LogsScreen : Screen {
             }
         }
 
-        val terminalPalette = remember(sc) {
-            LogTerminalPalette(
-                background = sc.surfaceApp,
-                onSurface = sc.textPrimary,
-                onSurfaceMuted = sc.textPrimary.copy(alpha = 0.85f),
-                onSurfaceDim = sc.textSecondary,
-            )
-        }
+        val terminalPalette =
+            remember(sc) {
+                LogTerminalPalette(
+                    background = sc.surfaceApp,
+                    onSurface = sc.textPrimary,
+                    onSurfaceMuted = sc.textPrimary.copy(alpha = 0.85f),
+                    onSurfaceDim = sc.textSecondary,
+                )
+            }
 
         ScreenScaffold(
             header = {
                 SaaSScreenHeader(
                     superTitle = "OBSERVABILITY",
-                    title = "Logs"
+                    title = "Logs",
                 )
-            }
+            },
         ) {
-
             // Toolbar
             Row(
                 Modifier.fillMaxWidth(),
@@ -303,7 +306,7 @@ class LogsScreen : Screen {
                     query = state.searchQuery,
                     onQueryChange = model::setSearch,
                     placeholder = "Search logs...",
-                    modifier = Modifier.weight(1f).widthIn(min = 160.dp, max = 480.dp)
+                    modifier = Modifier.weight(1f).widthIn(min = 160.dp, max = 480.dp),
                 )
 
                 // Auto-scroll toggle
@@ -380,20 +383,25 @@ class LogsScreen : Screen {
 }
 
 @Composable
-private fun LogLine(entry: LogEntry, palette: LogTerminalPalette) {
+private fun LogLine(
+    entry: LogEntry,
+    palette: LogTerminalPalette,
+) {
     val sc = GostSemantics.colors
-    val levelColor = when (entry.level.lowercase()) {
-        "error" -> sc.statusError
-        "warn" -> sc.statusWarning
-        "info" -> sc.statusSuccess
-        "debug" -> palette.onSurfaceDim
-        else -> palette.onSurfaceMuted
-    }
-    val bgColor = when (entry.level.lowercase()) {
-        "error" -> sc.statusError.copy(alpha = 0.08f)
-        "warn" -> sc.statusWarning.copy(alpha = 0.08f)
-        else -> Color.Transparent
-    }
+    val levelColor =
+        when (entry.level.lowercase()) {
+            "error" -> sc.statusError
+            "warn" -> sc.statusWarning
+            "info" -> sc.statusSuccess
+            "debug" -> palette.onSurfaceDim
+            else -> palette.onSurfaceMuted
+        }
+    val bgColor =
+        when (entry.level.lowercase()) {
+            "error" -> sc.statusError.copy(alpha = 0.08f)
+            "warn" -> sc.statusWarning.copy(alpha = 0.08f)
+            else -> Color.Transparent
+        }
 
     Row(
         Modifier

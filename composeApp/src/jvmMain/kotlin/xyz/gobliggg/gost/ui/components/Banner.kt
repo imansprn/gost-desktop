@@ -22,8 +22,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import xyz.gobliggg.gost.ui.theme.GostRadius
@@ -40,19 +38,21 @@ fun Banner(
 ) {
     val sc = GostSemantics.colors
 
-    val (container, foreground, icon) = when (type) {
-        BannerType.Info -> Triple(sc.statusInfoContainer, sc.statusInfo, Icons.Default.Info)
-        BannerType.Success -> Triple(sc.statusSuccessContainer, sc.statusSuccess, Icons.Default.CheckCircleOutline)
-        BannerType.Warning -> Triple(sc.statusWarningContainer, sc.statusWarning, Icons.Default.WarningAmber)
-        BannerType.Error -> Triple(sc.statusErrorContainer, sc.statusError, Icons.Default.ErrorOutline)
-    }
+    val (container, foreground, icon) =
+        when (type) {
+            BannerType.Info -> Triple(sc.statusInfoContainer, sc.statusInfo, Icons.Default.Info)
+            BannerType.Success -> Triple(sc.statusSuccessContainer, sc.statusSuccess, Icons.Default.CheckCircleOutline)
+            BannerType.Warning -> Triple(sc.statusWarningContainer, sc.statusWarning, Icons.Default.WarningAmber)
+            BannerType.Error -> Triple(sc.statusErrorContainer, sc.statusError, Icons.Default.ErrorOutline)
+        }
 
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(container, RoundedCornerShape(GostRadius.sm))
-            .border(1.dp, foreground.copy(alpha = 0.25f), RoundedCornerShape(GostRadius.sm))
-            .padding(horizontal = Spacing.lg, vertical = Spacing.md),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .background(container, RoundedCornerShape(GostRadius.sm))
+                .border(1.dp, foreground.copy(alpha = 0.25f), RoundedCornerShape(GostRadius.sm))
+                .padding(horizontal = Spacing.lg, vertical = Spacing.md),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -74,4 +74,3 @@ fun Banner(
         }
     }
 }
-

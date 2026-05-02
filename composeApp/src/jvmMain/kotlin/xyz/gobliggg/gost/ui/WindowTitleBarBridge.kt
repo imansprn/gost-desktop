@@ -12,7 +12,14 @@ import javax.swing.SwingUtilities
  * shows through the title bar region instead of the default gray chrome.
  */
 fun applyUnifiedTitleBarIfSupported(window: Window) {
-    if (!System.getProperty("os.name").orEmpty().lowercase().contains("mac")) return
+    if (!System
+            .getProperty("os.name")
+            .orEmpty()
+            .lowercase()
+            .contains("mac")
+    ) {
+        return
+    }
     SwingUtilities.invokeLater {
         val root = SwingUtilities.getRootPane(window) ?: return@invokeLater
         root.putClientProperty("apple.awt.fullWindowContent", true)

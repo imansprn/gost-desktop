@@ -7,7 +7,6 @@ import org.junit.Test
 import xyz.gobliggg.gost.ui.theme.GostTheme
 
 class DashboardScreenTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 

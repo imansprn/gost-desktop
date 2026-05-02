@@ -1,11 +1,9 @@
 package xyz.gobliggg.gost.screen.config
 
 import cafe.adriel.voyager.core.model.ScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import xyz.gobliggg.gost.data.ConfigBuilder
 import xyz.gobliggg.gost.data.ServiceRegistry
 import xyz.gobliggg.gost.ui.ShellFeedback
@@ -24,7 +22,6 @@ data class ConfigEditorUiState(
 )
 
 class ConfigEditorScreenModel : ScreenModel {
-
     private val _state = MutableStateFlow(ConfigEditorUiState())
     val state: StateFlow<ConfigEditorUiState> = _state.asStateFlow()
 
@@ -35,10 +32,11 @@ class ConfigEditorScreenModel : ScreenModel {
     private fun loadServiceList() {
         val services = ServiceRegistry.services.value
         val ids = services.map { it.id }
-        _state.value = _state.value.copy(
-            serviceIds = ids,
-            isLoading = false,
-        )
+        _state.value =
+            _state.value.copy(
+                serviceIds = ids,
+                isLoading = false,
+            )
         if (ids.isNotEmpty() && _state.value.selectedServiceId == null) {
             selectService(ids.first())
         } else {
@@ -48,14 +46,15 @@ class ConfigEditorScreenModel : ScreenModel {
 
     fun selectService(serviceId: String) {
         val content = ConfigBuilder.readServiceConfig(serviceId) ?: ""
-        _state.value = _state.value.copy(
-            selectedServiceId = serviceId,
-            content = content,
-            isDirty = false,
-            errorMessage = null,
-            successMessage = null,
-            isLoading = false,
-        )
+        _state.value =
+            _state.value.copy(
+                selectedServiceId = serviceId,
+                content = content,
+                isDirty = false,
+                errorMessage = null,
+                successMessage = null,
+                isLoading = false,
+            )
     }
 
     fun setFormat(format: String) {
@@ -74,17 +73,19 @@ class ConfigEditorScreenModel : ScreenModel {
 
         try {
             ConfigBuilder.buildServiceConfig(serviceId, s.content)
-            _state.value = _state.value.copy(
-                isSaving = false,
-                isDirty = false,
-                successMessage = "Configuration saved to disk.",
-            )
+            _state.value =
+                _state.value.copy(
+                    isSaving = false,
+                    isDirty = false,
+                    successMessage = "Configuration saved to disk.",
+                )
             ShellFeedback.showSnackbar("Configuration saved")
         } catch (e: Exception) {
-            _state.value = _state.value.copy(
-                isSaving = false,
-                errorMessage = "Save failed: ${e.message}",
-            )
+            _state.value =
+                _state.value.copy(
+                    isSaving = false,
+                    errorMessage = "Save failed: ${e.message}",
+                )
         }
     }
 
@@ -98,10 +99,11 @@ class ConfigEditorScreenModel : ScreenModel {
     fun exportToLocalFile(path: String) {
         try {
             File(path).writeText(_state.value.content)
-            _state.value = _state.value.copy(
-                successMessage = "Exported to: $path",
-                errorMessage = null,
-            )
+            _state.value =
+                _state.value.copy(
+                    successMessage = "Exported to: $path",
+                    errorMessage = null,
+                )
             ShellFeedback.showSnackbar("Exported configuration to file")
         } catch (e: Exception) {
             _state.value = _state.value.copy(errorMessage = e.message ?: "Export failed")

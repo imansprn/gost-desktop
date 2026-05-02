@@ -6,11 +6,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import xyz.gobliggg.gost.data.ConfigBuilder
 import xyz.gobliggg.gost.data.ProcessManager
 import xyz.gobliggg.gost.data.ServiceEntity
 import xyz.gobliggg.gost.data.ServiceRegistry
 import xyz.gobliggg.gost.ui.ShellFeedback
-import xyz.gobliggg.gost.data.ConfigBuilder
 
 data class ServicesUiState(
     val services: List<ServiceEntity> = emptyList(),
@@ -26,35 +26,37 @@ class ServicesScreenModel : ScreenModel {
     init {
         screenModelScope.launch {
             ServiceRegistry.services.collect { list ->
-                _state.value = _state.value.copy(
-                    services = list,
-                    filteredServices = filterServices(list, _state.value.searchQuery)
-                )
+                _state.value =
+                    _state.value.copy(
+                        services = list,
+                        filteredServices = filterServices(list, _state.value.searchQuery),
+                    )
             }
         }
     }
 
-    fun refresh() { 
+    fun refresh() {
         // Flow updates automatically, but we can do a dummy refresh
         _state.value = _state.value.copy(errorMessage = null)
     }
 
     fun search(query: String) {
         val currentServices = _state.value.services
-        _state.value = _state.value.copy(
-            searchQuery = query,
-            filteredServices = filterServices(currentServices, query)
-        )
+        _state.value =
+            _state.value.copy(
+                searchQuery = query,
+                filteredServices = filterServices(currentServices, query),
+            )
     }
-    
+
     fun startService(id: String) {
         ProcessManager.startService(id)
     }
-    
+
     fun stopService(id: String) {
         ProcessManager.stopService(id)
     }
-    
+
     fun restartService(id: String) {
         ProcessManager.restartService(id)
     }
@@ -68,13 +70,16 @@ class ServicesScreenModel : ScreenModel {
         }
     }
 
-    private fun filterServices(services: List<ServiceEntity>, query: String): List<ServiceEntity> {
+    private fun filterServices(
+        services: List<ServiceEntity>,
+        query: String,
+    ): List<ServiceEntity> {
         if (query.isBlank()) return services
         val q = query.lowercase()
         return services.filter {
             it.name.lowercase().contains(q) ||
-            it.id.lowercase().contains(q) ||
-            it.errorMessage?.lowercase()?.contains(q) == true
+                it.id.lowercase().contains(q) ||
+                it.errorMessage?.lowercase()?.contains(q) == true
         }
     }
 }
