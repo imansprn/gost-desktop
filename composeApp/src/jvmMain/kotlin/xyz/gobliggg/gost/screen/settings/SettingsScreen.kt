@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import xyz.gobliggg.gost.data.AppState
+import xyz.gobliggg.gost.model.AccentColor
 import xyz.gobliggg.gost.ui.components.*
 import xyz.gobliggg.gost.ui.theme.*
 import xyz.gobliggg.gost.ui.theme.Spacing
@@ -34,6 +35,20 @@ class SettingsScreen : Screen {
             // ── Appearance ──
             SectionHeader("Appearance")
             SectionCard {
+                Text(
+                    "Accent Color",
+                    color = sc.textSecondary,
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                Spacer(Modifier.height(Spacing.sm))
+                SaaSToggleGroup(
+                    options = AccentColor.entries,
+                    selectedOption = settings.accentColor,
+                    onOptionSelected = { color -> AppState.updateSettings { it.copy(accentColor = color) } },
+                    labelModifier = { it.name.lowercase().replaceFirstChar { char -> if (char.isLowerCase()) char.titlecase() else char.toString() } },
+                )
+                Spacer(Modifier.height(Spacing.lg))
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier =

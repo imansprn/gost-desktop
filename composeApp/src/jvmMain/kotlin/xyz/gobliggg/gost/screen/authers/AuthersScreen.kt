@@ -5,7 +5,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
@@ -155,13 +156,13 @@ class AuthersScreen(
     @Composable
     private fun AutherTableHeader() {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.tableHeaderRowV),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             SaaSTableHeader("NAME", modifier = Modifier.weight(1f))
             SaaSTableHeader("TYPE", modifier = Modifier.width(100.dp))
-            SaaSTableHeader("USERS/TARGET", modifier = Modifier.width(120.dp))
-            Spacer(Modifier.width(80.dp)) // Action column
+            SaaSTableHeader("USERS / TARGET", modifier = Modifier.width(150.dp))
+            SaaSTableHeader("OPTIONS", modifier = Modifier.width(64.dp), textAlign = TextAlign.End)
         }
     }
 
@@ -178,11 +179,11 @@ class AuthersScreen(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(GostRadius.md))
                     .background(sc.surfaceCard)
-                    .border(1.dp, sc.borderSubtle, RoundedCornerShape(12.dp))
+                    .border(1.dp, sc.borderSubtle, RoundedCornerShape(GostRadius.md))
                     .clickable { onEdit() }
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                    .padding(horizontal = Spacing.lg, vertical = Spacing.lg),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -199,7 +200,7 @@ class AuthersScreen(
                 Box(
                     modifier =
                         Modifier
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(GostRadius.xs))
                             .background(if (isPlugin) sc.statusInfoContainer else sc.stateSelected)
                             .padding(horizontal = Spacing.sm, vertical = 4.dp),
                 ) {
@@ -215,17 +216,21 @@ class AuthersScreen(
             // Info column
             Text(
                 if (isPlugin) dto.plugin?.addr ?: "-" else "${dto.auths?.size ?: 0} users",
-                modifier = Modifier.width(120.dp),
+                modifier = Modifier.width(150.dp),
                 fontSize = 13.sp,
                 color = sc.textSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
 
-            Row(modifier = Modifier.width(80.dp), horizontalArrangement = Arrangement.End) {
-                IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.size(16.dp), tint = sc.textSecondary)
-                }
-                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = RedStatus, modifier = Modifier.size(16.dp))
+            Box(Modifier.width(64.dp), contentAlignment = Alignment.CenterEnd) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
+                        Icon(androidx.compose.material.icons.Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.size(16.dp), tint = sc.textSecondary)
+                    }
+                    IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
+                        Icon(androidx.compose.material.icons.Icons.Default.Delete, contentDescription = "Delete", tint = sc.statusError, modifier = Modifier.size(16.dp))
+                    }
                 }
             }
         }

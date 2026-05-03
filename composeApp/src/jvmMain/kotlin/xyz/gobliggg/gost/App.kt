@@ -55,11 +55,13 @@ fun App() {
 
     val isRuntimeValid by AppState.isRuntimeValid.collectAsState()
 
+    val darkTheme = true
+
     LaunchedEffect(isRuntimeValid) {
         WindowTitleState.update(isRuntimeValid, "Local Process Managed")
     }
 
-    GostTheme(darkTheme = true) {
+    GostTheme(darkTheme = darkTheme) {
         Box(
             modifier =
                 Modifier

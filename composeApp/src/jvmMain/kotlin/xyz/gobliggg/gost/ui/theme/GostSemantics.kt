@@ -9,6 +9,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import kotlinx.coroutines.flow.map
 import androidx.compose.ui.graphics.Color
 
 @Immutable
@@ -37,6 +41,8 @@ data class GostSemanticColors(
     val statusErrorContainer: Color,
     val statusInfo: Color,
     val statusInfoContainer: Color,
+    val brandGradientStart: Color,
+    val brandGradientEnd: Color,
 )
 
 internal val LocalGostSemanticColors: ProvidableCompositionLocal<GostSemanticColors> =
@@ -54,12 +60,22 @@ object GostSemantics {
 
 @Composable
 internal fun rememberGostSemanticColors(dark: Boolean): GostSemanticColors {
-    val cs = MaterialTheme.colorScheme
+    val accent by remember {
+        xyz.gobliggg.gost.data.AppState.settings.map { it.accentColor }
+    }.collectAsState(xyz.gobliggg.gost.data.AppState.settings.value.accentColor)
+
+    val (start, end) =
+        when (accent) {
+            xyz.gobliggg.gost.model.AccentColor.CYAN -> GreenBright to BlueBright
+            xyz.gobliggg.gost.model.AccentColor.EMERALD -> Emerald500 to Teal400
+            xyz.gobliggg.gost.model.AccentColor.INDIGO -> BlueBright to Violet500
+            xyz.gobliggg.gost.model.AccentColor.AMBER -> OrangeBright to RedStatus
+        }
 
     // These choices intentionally preserve the current “dark SaaS” aesthetic while
     // enabling a single semantic source of truth for components.
     return if (dark) {
-        val accent = Cyan400
+        val infoAccent = if (accent == xyz.gobliggg.gost.model.AccentColor.AMBER) OrangeBright else start
         GostSemanticColors(
             // Match previous UI: white-forward typography with slate for muted labels.
             textPrimary = Color.White,
@@ -77,18 +93,20 @@ internal fun rememberGostSemanticColors(dark: Boolean): GostSemanticColors {
             stateHover = Color.White.copy(alpha = 0.05f),
             statePressed = Color.White.copy(alpha = 0.08f),
             stateSelected = SaaSSelection,
-            focusRing = accent,
+            focusRing = start,
             statusSuccess = GreenStatus,
             statusSuccessContainer = GreenStatus.copy(alpha = 0.10f),
             statusWarning = AmberStatus,
             statusWarningContainer = AmberStatus.copy(alpha = 0.12f),
             statusError = RedStatus,
             statusErrorContainer = RedStatus.copy(alpha = 0.10f),
-            statusInfo = accent,
-            statusInfoContainer = accent.copy(alpha = 0.12f),
+            statusInfo = infoAccent,
+            statusInfoContainer = infoAccent.copy(alpha = 0.12f),
+            brandGradientStart = start,
+            brandGradientEnd = end,
         )
     } else {
-        val accent = Violet500
+        // Fallback for light (though we hardcode dark, keeping this clean)
         GostSemanticColors(
             textPrimary = LightTextSlate900,
             textSecondary = LightTextSlate500,
@@ -102,18 +120,20 @@ internal fun rememberGostSemanticColors(dark: Boolean): GostSemanticColors {
             borderSubtle = LightEditorBorder.copy(alpha = 0.5f),
             borderStrong = LightEditorBorder,
             dividerSubtle = LightEditorBorder.copy(alpha = 0.3f),
-            stateHover = Violet50.copy(alpha = 0.5f),
-            statePressed = Violet50,
-            stateSelected = Violet50,
-            focusRing = accent,
+            stateHover = start.copy(alpha = 0.05f),
+            statePressed = start.copy(alpha = 0.1f),
+            stateSelected = start.copy(alpha = 0.1f),
+            focusRing = start,
             statusSuccess = Emerald500,
             statusSuccessContainer = Emerald500.copy(alpha = 0.10f),
             statusWarning = AmberStatusDark,
             statusWarningContainer = AmberStatusDark.copy(alpha = 0.12f),
             statusError = Rose500,
             statusErrorContainer = Rose500.copy(alpha = 0.10f),
-            statusInfo = accent,
-            statusInfoContainer = accent.copy(alpha = 0.12f),
+            statusInfo = start,
+            statusInfoContainer = start.copy(alpha = 0.12f),
+            brandGradientStart = start,
+            brandGradientEnd = end,
         )
     }
 }

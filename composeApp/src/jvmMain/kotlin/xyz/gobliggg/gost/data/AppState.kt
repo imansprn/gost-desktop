@@ -1,12 +1,12 @@
 package xyz.gobliggg.gost.data
 
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
 import xyz.gobliggg.gost.model.AppSettings
 import xyz.gobliggg.gost.model.GostRuntimeConfig
-import xyz.gobliggg.gost.model.ThemeMode
 import java.io.File
 
 /**
@@ -14,6 +14,8 @@ import java.io.File
  * Holds the local config and settings.
  */
 object AppState {
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
     private val _isInitialized = MutableStateFlow(false)
     val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
 
@@ -28,18 +30,13 @@ object AppState {
     private lateinit var configRepo: LocalConfigRepository
     private var localConfig = LocalConfig()
 
-    fun initialize(repo: LocalConfigRepository = LocalConfigRepository()) {
+    suspend fun initialize(repo: LocalConfigRepository = LocalConfigRepository()) = withContext(Dispatchers.IO) {
         configRepo = repo
         localConfig = configRepo.load()
         val loaded = localConfig.settings
-        val normalized = loaded.copy(theme = ThemeMode.DARK)
-        _settings.value = normalized
-        if (loaded.theme != ThemeMode.DARK) {
-            localConfig = localConfig.copy(settings = normalized)
-            configRepo.save(localConfig)
-        }
+        _settings.value = loaded
 
-        checkRuntimeValid(normalized.gostRuntime)
+        checkRuntimeValid(loaded.gostRuntime)
 
         // Ensure other systems boot up
         ServiceRegistry.initialize()
@@ -54,10 +51,13 @@ object AppState {
     }
 
     fun updateSettings(transform: (AppSettings) -> AppSettings) {
-        val updated = transform(_settings.value).copy(theme = ThemeMode.DARK)
+        val updated = transform(_settings.value)
         _settings.value = updated
         localConfig = localConfig.copy(settings = updated)
-        configRepo.save(localConfig)
+        
+        scope.launch {
+            configRepo.save(localConfig)
+        }
 
         checkRuntimeValid(updated.gostRuntime)
     }
@@ -93,6 +93,5 @@ object AppState {
 
     fun deleteProfile(id: String) { /* no-op in local mode */ }
 
-    val isDarkTheme: Boolean
-        get() = true
+    val isDarkTheme: Boolean = true
 }

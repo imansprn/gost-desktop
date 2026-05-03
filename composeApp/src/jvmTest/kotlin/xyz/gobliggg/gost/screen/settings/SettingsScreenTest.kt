@@ -7,6 +7,7 @@ import org.junit.Rule
 import org.junit.Test
 import xyz.gobliggg.gost.data.AppState
 import xyz.gobliggg.gost.ui.theme.GostTheme
+import kotlinx.coroutines.runBlocking
 
 class SettingsScreenTest {
     @get:Rule
@@ -15,7 +16,7 @@ class SettingsScreenTest {
     @Before
     fun setup() {
         if (!AppState.isInitialized.value) {
-            AppState.initialize()
+            runBlocking { AppState.initialize() }
         }
     }
 
@@ -47,6 +48,5 @@ class SettingsScreenTest {
         val initial = AppState.settings.value.sidebarCollapsed
         composeTestRule.onNodeWithText("Collapse sidebar by default").performClick()
         kotlin.test.assertEquals(!initial, AppState.settings.value.sidebarCollapsed)
-        kotlin.test.assertTrue(AppState.isDarkTheme)
     }
 }

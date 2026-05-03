@@ -85,12 +85,12 @@ class ServicesScreen(
                             .fillMaxWidth()
                             .padding(horizontal = Spacing.lg, vertical = Spacing.tableHeaderRowV),
                     ) {
-                        SaaSTableHeader("NAME", Modifier.weight(1.5f))
-                        SaaSTableHeader("LISTEN ADDRESS", Modifier.weight(1.2f))
-                        SaaSTableHeader("PID", Modifier.weight(0.5f))
-                        SaaSTableHeader("STATUS", Modifier.weight(1f))
-                        SaaSTableHeader("QUICK ACTIONS", Modifier.weight(1.3f))
-                        SaaSTableHeader("OPTIONS", Modifier.weight(0.5f))
+                        SaaSTableHeader("NAME", Modifier.weight(1f))
+                        SaaSTableHeader("LISTEN ADDRESS", Modifier.width(200.dp))
+                        SaaSTableHeader("PID", Modifier.width(80.dp))
+                        SaaSTableHeader("STATUS", Modifier.width(110.dp))
+                        SaaSTableHeader("QUICK ACTIONS", Modifier.width(180.dp))
+                        SaaSTableHeader("OPTIONS", Modifier.width(64.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
                     }
                     HorizontalDivider(color = sc.borderSubtle)
 
@@ -101,7 +101,7 @@ class ServicesScreen(
                                 .padding(horizontal = Spacing.lg, vertical = Spacing.md),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Column(Modifier.weight(1.5f)) {
+                            Column(Modifier.weight(1f)) {
                                 Text(
                                     svc.name,
                                     color = sc.textPrimary,
@@ -125,22 +125,24 @@ class ServicesScreen(
                                 svc.addr,
                                 color = sc.textMuted,
                                 style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.weight(1.2f),
+                                modifier = Modifier.width(200.dp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
 
                             Text(
                                 svc.pid?.toString() ?: "—",
                                 color = sc.textMuted,
                                 style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.weight(0.5f),
+                                modifier = Modifier.width(80.dp),
                             )
 
-                            Box(Modifier.weight(1f)) {
+                            Box(Modifier.width(110.dp)) {
                                 ServiceStatusPill(status = svc.status)
                             }
 
                             // Quick Actions
-                            Row(Modifier.weight(1.3f), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                            Row(Modifier.width(180.dp), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                                 if (svc.status == ServiceStatus.RUNNING) {
                                     SaaSButton(
                                         text = "Stop",
@@ -165,7 +167,7 @@ class ServicesScreen(
                                 )
                             }
 
-                            Box(Modifier.weight(0.5f), contentAlignment = Alignment.CenterEnd) {
+                            Box(Modifier.width(64.dp), contentAlignment = Alignment.CenterEnd) {
                                 IconTooltipButton(
                                     tooltip = "More actions",
                                     onClick = { rowMenuService = svc.id },

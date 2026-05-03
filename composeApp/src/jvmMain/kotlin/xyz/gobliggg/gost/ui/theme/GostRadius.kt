@@ -8,6 +8,9 @@ import androidx.compose.ui.unit.dp
 
 /** Shared corner radii — all values on 4pt sub-grid. */
 object GostRadius {
+    /** Ultra-small (checkboxes, tags). */
+    val xs = 4.dp
+
     /** Small controls (chips, compact rows). */
     val sm = 8.dp
 
@@ -19,4 +22,7 @@ object GostRadius {
 
     /** Full-round pill shapes. */
     val pill = 100.dp
+
+    /** Perfect round for icons. */
+    val round = 999.dp
 }

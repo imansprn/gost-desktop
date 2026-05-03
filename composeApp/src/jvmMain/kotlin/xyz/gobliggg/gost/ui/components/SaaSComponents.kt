@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -72,6 +73,7 @@ fun SaaSScreenHeader(
     superTitle: String? = null,
     subtitle: String? = null,
     modifier: Modifier = Modifier,
+    bottomSpacing: Dp = Spacing.xxl,
     leading: @Composable (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
@@ -80,7 +82,7 @@ fun SaaSScreenHeader(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(bottom = Spacing.xxl),
+                .padding(bottom = bottomSpacing),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Top,
     ) {
@@ -149,6 +151,7 @@ fun SaaSListContainer(
 fun SaaSTableHeader(
     text: String,
     modifier: Modifier = Modifier,
+    textAlign: androidx.compose.ui.text.style.TextAlign = androidx.compose.ui.text.style.TextAlign.Start,
 ) {
     val sc = GostSemantics.colors
     Text(
@@ -156,6 +159,7 @@ fun SaaSTableHeader(
         color = sc.textMuted,
         style = GostTextStyles.tableHeader,
         modifier = modifier,
+        textAlign = textAlign,
     )
 }
 
@@ -194,7 +198,7 @@ fun SaaSTextField(
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth().height(40.dp),
+            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 40.dp),
             enabled = enabled,
             singleLine = singleLine,
             visualTransformation = visualTransformation,
@@ -328,24 +332,6 @@ fun SaaSButton(
             else -> 0f
         }
 
-    val gradientModifier =
-        modifier
-            .background(
-                brush =
-                    Brush.linearGradient(
-                        colors = listOf(BrandGradientStart, BrandGradientEnd),
-                        start = Offset(0f, 0f),
-                        end = Offset(500f, 0f),
-                    ),
-                shape = shape,
-            ).then(
-                if (overlayAlpha > 0f) {
-                    Modifier.background(sc.textOnAccent.copy(alpha = overlayAlpha), shape)
-                } else {
-                    Modifier
-                },
-            )
-
     val content: @Composable () -> Unit = {
         if (loading) {
             CircularProgressIndicator(
@@ -371,11 +357,11 @@ fun SaaSButton(
     }
 
     if (type == SaaSButtonType.PRIMARY) {
-        // Custom button avoids desktop indication that can draw a box around text on hover.
+        // Layout/gesture on the outer Box; gradient + overlay on an inner layer so visuals fill the clipped bounds.
         Box(
             modifier =
-                gradientModifier
-                    .height(40.dp)
+                modifier
+                    .defaultMinSize(minHeight = 40.dp)
                     .clip(shape)
                     .clickable(
                         enabled = enabled && !loading,
@@ -384,11 +370,38 @@ fun SaaSButton(
                     ) {
                         onClick()
                         focusManager.clearFocus()
-                    }.padding(horizontal = Spacing.lg),
-            contentAlignment = Alignment.Center,
+                    },
         ) {
-            CompositionLocalProvider(LocalContentColor provides contentColor) {
-                content()
+            Box(
+                modifier =
+                    Modifier
+                        .matchParentSize()
+                        .background(
+                            brush =
+                                Brush.linearGradient(
+                                    colors = listOf(sc.brandGradientStart, sc.brandGradientEnd),
+                                    start = Offset(0f, 0f),
+                                    end = Offset(500f, 0f),
+                                ),
+                            shape = shape,
+                        ).then(
+                            if (overlayAlpha > 0f) {
+                                Modifier.background(sc.textOnAccent.copy(alpha = overlayAlpha), shape)
+                            } else {
+                                Modifier
+                            },
+                        ),
+            )
+            Box(
+                modifier =
+                    Modifier
+                        .matchParentSize()
+                        .padding(PaddingValues(horizontal = Spacing.lg, vertical = 0.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                CompositionLocalProvider(LocalContentColor provides contentColor) {
+                    content()
+                }
             }
         }
     } else {
@@ -397,7 +410,7 @@ fun SaaSButton(
                 onClick()
                 focusManager.clearFocus()
             },
-            modifier = modifier.height(40.dp),
+            modifier = modifier.defaultMinSize(minHeight = 40.dp),
             enabled = enabled && !loading,
             shape = shape,
             interactionSource = interactionSource,

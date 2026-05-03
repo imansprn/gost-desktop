@@ -2,17 +2,20 @@ package xyz.gobliggg.gost.data
 
 import org.junit.Before
 import org.junit.Test
-import xyz.gobliggg.gost.model.ThemeMode
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.runBlocking
 
 class AppStateTest {
+    private lateinit var tempDir: java.io.File
+
     @Before
     fun setup() {
-        if (!AppState.isInitialized.value) {
-            AppState.initialize()
-        }
+        tempDir = java.io.File(System.getProperty("java.io.tmpdir"), "gost-test-${java.util.UUID.randomUUID()}")
+        tempDir.mkdirs()
+        val testRepo = LocalConfigRepository(tempDir)
+        runBlocking { AppState.initialize(testRepo) }
     }
 
     @Test
@@ -20,7 +23,6 @@ class AppStateTest {
         val initial = AppState.settings.value.sidebarCollapsed
         AppState.updateSettings { it.copy(sidebarCollapsed = !initial) }
         assertEquals(!initial, AppState.settings.value.sidebarCollapsed)
-        assertEquals(ThemeMode.DARK, AppState.settings.value.theme)
     }
 
     @Test
@@ -36,11 +38,4 @@ class AppStateTest {
         assertNull(AppState.takePendingShellRoute(), "api-error routes should be normalized to null")
     }
 
-    @Test
-    fun `test theme is always dark`() {
-        assertTrue(AppState.isDarkTheme)
-        AppState.updateSettings { it.copy(theme = ThemeMode.LIGHT) }
-        assertTrue(AppState.isDarkTheme)
-        assertEquals(ThemeMode.DARK, AppState.settings.value.theme)
-    }
 }

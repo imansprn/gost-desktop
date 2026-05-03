@@ -73,7 +73,7 @@ val DeepNavyPanel = Color(0xFF0F172A)
 
 // ── Brand / Ambient accents (used by shared components) ──
 val BrandGradientStart = GreenBright
-val BrandGradientEnd = Color(0xFF0055FF)
+val BrandGradientEnd = BlueBright
 val AmbientMeshGlow = Cyan400
 val AmbientMeshBase = Color(0xFF061019)
 

@@ -1,8 +1,10 @@
 package xyz.gobliggg.gost.model
 
+import androidx.compose.runtime.Immutable
 import kotlinx.serialization.Serializable
 
 @Serializable
+@Immutable
 data class GostRuntimeConfig(
     val binaryPath: String = "",
     val workingDirectory: String = "",
@@ -10,8 +12,9 @@ data class GostRuntimeConfig(
 )
 
 @Serializable
+@Immutable
 data class AppSettings(
-    val theme: ThemeMode = ThemeMode.DARK,
+    val accentColor: AccentColor = AccentColor.CYAN,
     val gostRuntime: GostRuntimeConfig = GostRuntimeConfig(),
     val sidebarCollapsed: Boolean = false,
     val confirmDeletes: Boolean = true,
@@ -20,8 +23,9 @@ data class AppSettings(
 )
 
 @Serializable
-enum class ThemeMode {
-    LIGHT,
-    DARK,
-    SYSTEM,
+enum class AccentColor {
+    CYAN,
+    EMERALD,
+    INDIGO,
+    AMBER,
 }
