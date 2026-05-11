@@ -26,7 +26,7 @@ import java.util.UUID
  * the shell does not reuse another wizard session's screen model.
  */
 fun newServiceWizardRoute(): String {
-    ServiceWizardDraftStore.clear()
+    ServiceWizardDraftStore.default().clear()
     return "service-new-${UUID.randomUUID()}"
 }
 

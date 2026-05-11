@@ -19,13 +19,17 @@ data class ServicesUiState(
     val errorMessage: String? = null,
 )
 
-class ServicesScreenModel : ScreenModel {
+class ServicesScreenModel(
+    private val serviceRegistry: ServiceRegistry = ServiceRegistry.default(),
+    private val configBuilder: ConfigBuilder = ConfigBuilder.default(),
+    private val processManager: ProcessManager = ProcessManager.default(),
+) : ScreenModel {
     private val _state = MutableStateFlow(ServicesUiState())
     val state: StateFlow<ServicesUiState> = _state.asStateFlow()
 
     init {
         screenModelScope.launch {
-            ServiceRegistry.services.collect { list ->
+            serviceRegistry.services.collect { list ->
                 _state.value =
                     _state.value.copy(
                         services = list,
@@ -50,21 +54,21 @@ class ServicesScreenModel : ScreenModel {
     }
 
     fun startService(id: String) {
-        ProcessManager.startService(id)
+        processManager.startService(id)
     }
 
     fun stopService(id: String) {
-        ProcessManager.stopService(id)
+        processManager.stopService(id)
     }
 
     fun restartService(id: String) {
-        ProcessManager.restartService(id)
+        processManager.restartService(id)
     }
 
     fun deleteService(id: String) {
         stopService(id)
-        ConfigBuilder.deleteServiceConfig(id)
-        ServiceRegistry.removeService(id)
+        configBuilder.deleteServiceConfig(id)
+        serviceRegistry.removeService(id)
         screenModelScope.launch {
             ShellFeedback.showSnackbar("Tunnel deleted")
         }

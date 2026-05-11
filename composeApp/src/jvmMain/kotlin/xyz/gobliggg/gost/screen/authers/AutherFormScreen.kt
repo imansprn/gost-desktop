@@ -30,7 +30,7 @@ class AutherFormScreen(
         val initialAuther =
             remember(editName) {
                 if (editName.isNullOrBlank()) return@remember null
-                val content = ConfigBuilder.readTemplate("authers", editName)
+                val content = ConfigBuilder.default().readTemplate("authers", editName)
                 if (content.isNullOrBlank()) return@remember AutherDto(name = editName)
                 try {
                     json.decodeFromString(AutherDto.serializer(), content)
@@ -46,7 +46,7 @@ class AutherFormScreen(
             onSave = { dto ->
                 val name = dto.name
                 if (!name.isNullOrBlank()) {
-                    ConfigBuilder.saveTemplate("authers", name, json.encodeToString(AutherDto.serializer(), dto))
+                    ConfigBuilder.default().saveTemplate("authers", name, json.encodeToString(AutherDto.serializer(), dto))
                     onDone()
                 }
             },

@@ -21,7 +21,10 @@ data class ConfigEditorUiState(
     val serviceIds: List<String> = emptyList(),
 )
 
-class ConfigEditorScreenModel : ScreenModel {
+class ConfigEditorScreenModel(
+    private val serviceRegistry: ServiceRegistry = ServiceRegistry.default(),
+    private val configBuilder: ConfigBuilder = ConfigBuilder.default(),
+) : ScreenModel {
     private val _state = MutableStateFlow(ConfigEditorUiState())
     val state: StateFlow<ConfigEditorUiState> = _state.asStateFlow()
 
@@ -30,7 +33,7 @@ class ConfigEditorScreenModel : ScreenModel {
     }
 
     private fun loadServiceList() {
-        val services = ServiceRegistry.services.value
+        val services = serviceRegistry.services.value
         val ids = services.map { it.id }
         _state.value =
             _state.value.copy(
@@ -45,7 +48,7 @@ class ConfigEditorScreenModel : ScreenModel {
     }
 
     fun selectService(serviceId: String) {
-        val content = ConfigBuilder.readServiceConfig(serviceId) ?: ""
+        val content = configBuilder.readServiceConfig(serviceId) ?: ""
         _state.value =
             _state.value.copy(
                 selectedServiceId = serviceId,
@@ -72,7 +75,7 @@ class ConfigEditorScreenModel : ScreenModel {
         _state.value = s.copy(isSaving = true, errorMessage = null, successMessage = null)
 
         try {
-            ConfigBuilder.buildServiceConfig(serviceId, s.content)
+            configBuilder.buildServiceConfig(serviceId, s.content)
             _state.value =
                 _state.value.copy(
                     isSaving = false,

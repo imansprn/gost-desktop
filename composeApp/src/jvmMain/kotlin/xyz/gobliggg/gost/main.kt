@@ -33,7 +33,7 @@ fun main() =
         }
 
         val exitApp = {
-            xyz.gobliggg.gost.data.ProcessManager
+            xyz.gobliggg.gost.data.ProcessManager.default()
                 .stopAll()
             exitApplication()
         }

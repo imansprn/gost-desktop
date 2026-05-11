@@ -26,7 +26,7 @@ fun TemplateEditorLayout(
     title: String,
     defaultJson: String,
 ) {
-    var templates by remember { mutableStateOf(ConfigBuilder.listTemplates(templateType)) }
+    var templates by remember { mutableStateOf(ConfigBuilder.default().listTemplates(templateType)) }
     var selectedTemplate by remember { mutableStateOf<String?>(null) }
     var templateContent by remember { mutableStateOf("") }
     var isEditing by remember { mutableStateOf(false) }
@@ -35,7 +35,7 @@ fun TemplateEditorLayout(
 
     LaunchedEffect(selectedTemplate) {
         if (selectedTemplate != null) {
-            templateContent = ConfigBuilder.readTemplate(templateType, selectedTemplate!!) ?: ""
+            templateContent = ConfigBuilder.default().readTemplate(templateType, selectedTemplate!!) ?: ""
             isEditing = false
             jsonError = null
         } else {
@@ -49,8 +49,8 @@ fun TemplateEditorLayout(
             try {
                 Json.parseToJsonElement(templateContent)
                 jsonError = null
-                ConfigBuilder.saveTemplate(templateType, selectedTemplate!!, templateContent)
-                templates = ConfigBuilder.listTemplates(templateType)
+                ConfigBuilder.default().saveTemplate(templateType, selectedTemplate!!, templateContent)
+                templates = ConfigBuilder.default().listTemplates(templateType)
                 isEditing = false
             } catch (e: Exception) {
                 jsonError = "Invalid JSON: ${e.message?.take(120)}"
@@ -62,7 +62,7 @@ fun TemplateEditorLayout(
         val dir = java.io.File(System.getProperty("user.home"), ".gost-manager/templates/$templateType")
         val file = java.io.File(dir, "$name.json")
         if (file.exists()) file.delete()
-        templates = ConfigBuilder.listTemplates(templateType)
+        templates = ConfigBuilder.default().listTemplates(templateType)
         if (selectedTemplate == name) {
             selectedTemplate = null
             templateContent = ""
@@ -82,8 +82,8 @@ fun TemplateEditorLayout(
             Button(
                 onClick = {
                     val name = "new-$templateType-${System.currentTimeMillis()}"
-                    ConfigBuilder.saveTemplate(templateType, name, defaultJson.replace("{name}", name))
-                    templates = ConfigBuilder.listTemplates(templateType)
+                    ConfigBuilder.default().saveTemplate(templateType, name, defaultJson.replace("{name}", name))
+                    templates = ConfigBuilder.default().listTemplates(templateType)
                     selectedTemplate = name
                     isEditing = true
                 },
@@ -173,7 +173,7 @@ fun TemplateEditorLayout(
                             OutlinedButton(
                                 onClick = {
                                     // Discard edits
-                                    templateContent = ConfigBuilder.readTemplate(templateType, selectedTemplate!!) ?: ""
+                                    templateContent = ConfigBuilder.default().readTemplate(templateType, selectedTemplate!!) ?: ""
                                     isEditing = false
                                     jsonError = null
                                 },

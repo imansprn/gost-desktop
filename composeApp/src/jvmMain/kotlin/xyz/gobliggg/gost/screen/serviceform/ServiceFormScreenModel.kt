@@ -88,6 +88,10 @@ data class ServiceFormUiState(
 
 class ServiceFormScreenModel(
     private val editName: String? = null,
+    private val wizardDraftStore: ServiceWizardDraftStore = ServiceWizardDraftStore.default(),
+    private val configBuilder: ConfigBuilder = ConfigBuilder.default(),
+    private val serviceRegistry: ServiceRegistry = ServiceRegistry.default(),
+    private val processManager: ProcessManager = ProcessManager.default(),
 ) : ScreenModel {
     private val json = Json { prettyPrint = true }
 
@@ -96,7 +100,7 @@ class ServiceFormScreenModel(
 
     init {
         if (editName == null) {
-            ServiceWizardDraftStore.load()?.let { draft ->
+            wizardDraftStore.load()?.let { draft ->
                 applyLoadedDraft(draft)
                 _state.value = _state.value.copy(currentStep = 0)
             }
@@ -133,7 +137,7 @@ class ServiceFormScreenModel(
         if (editName != null) return
         val s = _state.value
         if (!s.isDirty) return
-        ServiceWizardDraftStore.save(
+        wizardDraftStore.save(
             ServiceWizardDraftData(
                 currentStep = s.currentStep,
                 name = s.name,
@@ -157,11 +161,11 @@ class ServiceFormScreenModel(
     }
 
     private fun loadDropdowns() {
-        val chains = ConfigBuilder.listTemplates("chains")
-        val authers = ConfigBuilder.listTemplates("authers")
-        val bypasses = ConfigBuilder.listTemplates("bypass")
-        val admissions = ConfigBuilder.listTemplates("admission")
-        val limiters = ConfigBuilder.listTemplates("limiters")
+        val chains = configBuilder.listTemplates("chains")
+        val authers = configBuilder.listTemplates("authers")
+        val bypasses = configBuilder.listTemplates("bypass")
+        val admissions = configBuilder.listTemplates("admission")
+        val limiters = configBuilder.listTemplates("limiters")
 
         _state.value =
             _state.value.copy(
@@ -174,7 +178,7 @@ class ServiceFormScreenModel(
     }
 
     private fun loadService(id: String) {
-        val jsonConfig = ConfigBuilder.readServiceConfig(id)
+        val jsonConfig = configBuilder.readServiceConfig(id)
         if (jsonConfig == null) {
             _state.value = _state.value.copy(errorMessage = "Config not found")
             return
@@ -387,7 +391,7 @@ class ServiceFormScreenModel(
         }
         try {
             val content = json.encodeToString(ch)
-            ConfigBuilder.saveTemplate("chains", name, content)
+            configBuilder.saveTemplate("chains", name, content)
             loadDropdowns()
             _state.value = _state.value.copy(chainRef = name, isDirty = true)
             onDone(null)
@@ -499,7 +503,7 @@ class ServiceFormScreenModel(
             rootArrayName: String,
         ) {
             if (ref != null) {
-                val tp = ConfigBuilder.readTemplate(type, ref)
+                val tp = configBuilder.readTemplate(type, ref)
                 if (tp != null) {
                     val arr = arrays.getOrPut(rootArrayName) { buildJsonArray {} }
                     val newArr =
@@ -538,18 +542,18 @@ class ServiceFormScreenModel(
             val configContent = buildPreviewJson()
             val id = _state.value.name // id is just the name chosen by user
 
-            val path = ConfigBuilder.buildServiceConfig(id, configContent)
+            val path = configBuilder.buildServiceConfig(id, configContent)
 
             // If we are editing, stop the old process and handle renames
             if (editName != null) {
-                ProcessManager.stopService(editName)
+                processManager.stopService(editName)
                 if (editName != id) {
-                    ServiceRegistry.removeService(editName)
-                    ConfigBuilder.deleteServiceConfig(editName)
+                    serviceRegistry.removeService(editName)
+                    configBuilder.deleteServiceConfig(editName)
                 }
             }
 
-            ServiceRegistry.addOrUpdateService(
+            serviceRegistry.addOrUpdateService(
                 ServiceEntity(
                     id = id,
                     name = id,
@@ -559,7 +563,7 @@ class ServiceFormScreenModel(
                 ),
             )
 
-            if (editName == null) ServiceWizardDraftStore.clear()
+            if (editName == null) wizardDraftStore.clear()
             _state.value = _state.value.copy(isSubmitting = false)
             ShellFeedback.showSnackbar(if (editName != null) "Tunnel updated" else "Tunnel created")
             onSuccess()

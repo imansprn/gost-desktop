@@ -32,7 +32,7 @@ class ChainsScreen(
 ) : Screen {
     @Composable
     override fun Content() {
-        var templates by remember { mutableStateOf(ConfigBuilder.listTemplates("chains")) }
+        var templates by remember { mutableStateOf(ConfigBuilder.default().listTemplates("chains")) }
         var selectedTemplate by remember { mutableStateOf<String?>(null) }
         var editingChain by remember { mutableStateOf<ChainDto?>(null) }
         var isDirty by remember { mutableStateOf(false) }
@@ -50,12 +50,12 @@ class ChainsScreen(
             }
 
         fun reload() {
-            templates = ConfigBuilder.listTemplates("chains")
+            templates = ConfigBuilder.default().listTemplates("chains")
         }
 
         LaunchedEffect(selectedTemplate) {
             if (selectedTemplate != null) {
-                val content = ConfigBuilder.readTemplate("chains", selectedTemplate!!)
+                val content = ConfigBuilder.default().readTemplate("chains", selectedTemplate!!)
                 editingChain =
                     try {
                         if (content != null) json.decodeFromString<ChainDto>(content) else null
@@ -74,6 +74,7 @@ class ChainsScreen(
             }
 
         val sc = GostSemantics.colors
+        val SaASAction = Color(0xFF0F2B2B)
         Box(modifier = Modifier.fillMaxSize().padding(Spacing.xl)) {
             Row(modifier = Modifier.fillMaxSize()) {
                 // ── Left: Chain List (35%) ──
@@ -172,7 +173,7 @@ class ChainsScreen(
                                         onClick = {
                                             val name = editingChain!!.name
                                             if (!name.isNullOrBlank()) {
-                                                ConfigBuilder.saveTemplate("chains", name, json.encodeToString(editingChain))
+                                                ConfigBuilder.default().saveTemplate("chains", name, json.encodeToString(editingChain))
                                                 isDirty = false
                                                 reload()
                                             }
@@ -202,6 +203,20 @@ class ChainsScreen(
                         }
                     }
                 }
+            FloatingActionButton(
+                onClick = {
+                    newChainName = ""
+                    showCreateDialog = true
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(Spacing.xl),
+                containerColor = SaASAction,
+                contentColor = Color.White,
+                shape = RoundedCornerShape(GostRadius.md)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "New chain")
+            }
             }
         }
 
@@ -240,7 +255,7 @@ class ChainsScreen(
                         onClick = {
                             if (newChainName.isNotBlank()) {
                                 val newChain = ChainDto(name = newChainName, hops = listOf(HopDto("hop-1", listOf(NodeDto()))))
-                                ConfigBuilder.saveTemplate("chains", newChainName, json.encodeToString(newChain))
+                                ConfigBuilder.default().saveTemplate("chains", newChainName, json.encodeToString(newChain))
                                 reload()
                                 selectedTemplate = newChainName
                                 showCreateDialog = false

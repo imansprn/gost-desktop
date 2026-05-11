@@ -31,7 +31,7 @@ class AuthersScreen(
 ) : Screen {
     @Composable
     override fun Content() {
-        var templates by remember { mutableStateOf(ConfigBuilder.listTemplates("authers")) }
+        var templates by remember { mutableStateOf(ConfigBuilder.default().listTemplates("authers")) }
         var deleteTarget by remember { mutableStateOf<String?>(null) }
         var searchQuery by remember { mutableStateOf("") }
         val sc = GostSemantics.colors
@@ -47,7 +47,7 @@ class AuthersScreen(
             }
 
         fun reload() {
-            templates = ConfigBuilder.listTemplates("authers")
+            templates = ConfigBuilder.default().listTemplates("authers")
         }
 
         val filteredTemplates =
@@ -97,7 +97,7 @@ class AuthersScreen(
                                 AutherTableHeader()
                             }
                             items(filteredTemplates) { name ->
-                                val content = ConfigBuilder.readTemplate("authers", name)
+                                val content = ConfigBuilder.default().readTemplate("authers", name)
                                 val dto =
                                     remember(content) {
                                         try {
@@ -141,10 +141,7 @@ class AuthersScreen(
                 title = "Delete Auther",
                 message = "Are you sure you want to delete \"$deleteTarget\"?",
                 onConfirm = {
-                    ConfigBuilder.saveTemplate("authers", deleteTarget!!, "") // Or add real delete to ConfigBuilder
-                    // For now I'll use the hack since I saw file deletion in TemplateEditorLayout
-                    val dir = java.io.File(System.getProperty("user.home"), ".gost-manager/templates/authers")
-                    java.io.File(dir, "$deleteTarget.json").delete()
+                    ConfigBuilder.default().deleteTemplate("authers", deleteTarget!!)
                     deleteTarget = null
                     reload()
                 },

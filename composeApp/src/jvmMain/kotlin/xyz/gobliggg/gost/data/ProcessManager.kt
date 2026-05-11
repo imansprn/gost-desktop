@@ -16,7 +16,9 @@ data class LogEvent(
     val timestamp: Long = System.currentTimeMillis(),
 )
 
-object ProcessManager {
+class ProcessManager(
+    private val serviceRegistry: ServiceRegistry,
+) {
     private val scope = CoroutineScope(Dispatchers.IO + Job())
     private val processes = ConcurrentHashMap<String, Process>()
     private val logJobs = ConcurrentHashMap<String, Job>()
@@ -24,22 +26,35 @@ object ProcessManager {
     private val _logs = MutableSharedFlow<LogEvent>(replay = 1000, extraBufferCapacity = 1000)
     val logs: SharedFlow<LogEvent> = _logs
 
+    companion object {
+        private val defaultInstance by lazy { ProcessManager(ServiceRegistry.default()) }
+
+        /** Convenience accessor for non-DI callers. */
+        fun default(): ProcessManager = defaultInstance
+    }
+
     fun initialize() {
-        // Register shutdown hook as a safety measure
+        // Register shutdown hook to kill orphan processes on JVM exit
         Runtime.getRuntime().addShutdownHook(
-            Thread {
-                stopAll()
-            },
+            Thread(
+                {
+                    stopAll()
+                },
+                "gost-process-shutdown-hook",
+            ),
         )
     }
 
     fun startService(serviceId: String) {
-        val svc = ServiceRegistry.getService(serviceId) ?: return
+        val svc = serviceRegistry.getService(serviceId) ?: return
         if (processes.containsKey(serviceId)) return // Already running according to us
+
+        // Safety: if there's a stale process entry, destroy it first
+        processes[serviceId]?.destroyForcibly()
 
         val runtime = AppState.settings.value.gostRuntime
         if (runtime.binaryPath.isBlank()) {
-            ServiceRegistry.updateServiceStatus(serviceId, ServiceStatus.ERROR, errorMessage = "GOST runtime path not set")
+            serviceRegistry.updateServiceStatus(serviceId, ServiceStatus.ERROR, errorMessage = "GOST runtime path not set")
             return
         }
 
@@ -61,7 +76,7 @@ object ProcessManager {
             processes[serviceId] = process
             val pid = process.pid()
 
-            ServiceRegistry.updateServiceStatus(serviceId, ServiceStatus.RUNNING, pid = pid, errorMessage = null)
+            serviceRegistry.updateServiceStatus(serviceId, ServiceStatus.RUNNING, pid = pid, errorMessage = null)
 
             // start tailing logs
             val job =
@@ -79,8 +94,8 @@ object ProcessManager {
                     logJobs.remove(serviceId)
 
                     // If it wasn't intentionally stopped
-                    if (ServiceRegistry.getService(serviceId)?.status == ServiceStatus.RUNNING) {
-                        ServiceRegistry.updateServiceStatus(
+                    if (serviceRegistry.getService(serviceId)?.status == ServiceStatus.RUNNING) {
+                        serviceRegistry.updateServiceStatus(
                             serviceId,
                             ServiceStatus.ERROR,
                             errorMessage = "Process exited with code $exitCode",
@@ -89,7 +104,7 @@ object ProcessManager {
                 }
             logJobs[serviceId] = job
         } catch (e: Exception) {
-            ServiceRegistry.updateServiceStatus(serviceId, ServiceStatus.ERROR, errorMessage = "Failed to start: ${e.message}")
+            serviceRegistry.updateServiceStatus(serviceId, ServiceStatus.ERROR, errorMessage = "Failed to start: ${e.message}")
         }
     }
 
@@ -98,7 +113,7 @@ object ProcessManager {
         val job = logJobs.remove(serviceId)
 
         if (process != null) {
-            ServiceRegistry.updateServiceStatus(serviceId, ServiceStatus.IDLE)
+            serviceRegistry.updateServiceStatus(serviceId, ServiceStatus.IDLE)
             process.destroyForcibly()
         }
 

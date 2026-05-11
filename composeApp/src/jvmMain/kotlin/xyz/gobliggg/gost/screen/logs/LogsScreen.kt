@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import xyz.gobliggg.gost.data.ProcessManager
 import xyz.gobliggg.gost.data.ServiceRegistry
 import xyz.gobliggg.gost.ui.components.*
 import xyz.gobliggg.gost.ui.theme.*
@@ -125,7 +126,10 @@ private fun findBracketLevelInLine(line: String): Pair<String, String>? {
     return null
 }
 
-class LogsScreenModel : ScreenModel {
+class LogsScreenModel(
+    private val serviceRegistry: ServiceRegistry = ServiceRegistry.default(),
+    private val processManager: ProcessManager = ProcessManager.default(),
+) : ScreenModel {
     private val _state = MutableStateFlow(LogsUiState(sourceAvailable = true))
     val state: StateFlow<LogsUiState> = _state.asStateFlow()
 
@@ -135,7 +139,7 @@ class LogsScreenModel : ScreenModel {
     init {
         screenModelScope.launch {
             // Load available services for filter dropdown
-            ServiceRegistry.services.collect { services ->
+            serviceRegistry.services.collect { services ->
                 _state.value =
                     _state.value.copy(
                         availableServices = services.map { it.id },
@@ -143,7 +147,7 @@ class LogsScreenModel : ScreenModel {
             }
         }
         screenModelScope.launch {
-            xyz.gobliggg.gost.data.ProcessManager.logs.collect { event ->
+            processManager.logs.collect { event ->
                 val line = parseGostLog(event.text, event.serviceId, event.timestamp)
                 val s = _state.value
                 val newEntries = (s.entries + line).takeLast(maxLines)

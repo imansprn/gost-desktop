@@ -1,35 +1,39 @@
 package xyz.gobliggg.gost.data
 
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlin.test.assertFailsWith
 
 class ConfigBuilderTest {
     @get:Rule
     val tempFolder = TemporaryFolder()
 
-    private lateinit var configsDir: File
-    private lateinit var templatesDir: File
+    private lateinit var configBuilder: ConfigBuilder
+    private lateinit var baseDir: File
 
     @Before
     fun setup() {
-        // We can't easily change the private properties of the ConfigBuilder object
-        // without refactoring it to be a class or using reflection.
-        // For this demonstration, we'll test the logic that can be isolated or
-        // assume we might refactor it later.
+        baseDir = tempFolder.newFolder("gost-manager")
+        configBuilder = ConfigBuilder(baseDir)
+    }
+
+    @After
+    fun cleanup() {
+        // No cleanup needed — TemporaryFolder handles it
     }
 
     @Test
     fun `test build service config json formatting`() {
-        // This test will write to the real user home if not careful,
-        // but let's assume we are in a safe test environment or
-        // we've refactored ConfigBuilder to allow custom directories.
-
-        val rawJson = "{\"services\":[{\"name\":\"test\"}]}"
-        val formatted = ConfigBuilder.buildServiceConfig("test-config", rawJson)
+        val rawJson = """{"services":[{"name":"test"}]}"""
+        val formatted = configBuilder.buildServiceConfig("test-config", rawJson)
 
         val file = File(formatted)
         assertTrue(file.exists())
@@ -37,32 +41,65 @@ class ConfigBuilderTest {
 
         // Should be pretty printed
         assertTrue(content.contains("  \"services\""), "JSON should be pretty printed")
-
-        // Cleanup
-        ConfigBuilder.deleteServiceConfig("test-config")
     }
 
     @Test
     fun `test template management`() {
         val type = "chains"
         val name = "test-chain"
-        val content = "{\"name\":\"test\"}"
+        val content = """{"name":"test"}"""
 
-        ConfigBuilder.saveTemplate(type, name, content)
+        configBuilder.saveTemplate(type, name, content)
 
-        val loaded = ConfigBuilder.readTemplate(type, name)
+        val loaded = configBuilder.readTemplate(type, name)
+        assertNotNull(loaded)
         assertEquals(content, loaded)
 
-        val templates = ConfigBuilder.listTemplates(type)
+        val templates = configBuilder.listTemplates(type)
         assertTrue(templates.contains(name))
-
-        // Cleanup would normally happen here if we had a deleteTemplate
     }
 
-    private fun assertTrue(
-        condition: Boolean,
-        message: String = "",
-    ) {
-        kotlin.test.assertTrue(condition, message)
+    @Test
+    fun `test delete template`() {
+        configBuilder.saveTemplate("chains", "delete-me", """{"name":"delete-me"}""")
+        assertNotNull(configBuilder.readTemplate("chains", "delete-me"))
+
+        configBuilder.deleteTemplate("chains", "delete-me")
+        assertNull(configBuilder.readTemplate("chains", "delete-me"))
+    }
+
+    @Test
+    fun `test path traversal attack is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            configBuilder.saveTemplate("chains", "../../etc/passwd", "evil")
+        }
+
+        assertFailsWith<IllegalArgumentException> {
+            configBuilder.buildServiceConfig("../../malicious", "{}")
+        }
+    }
+
+    @Test
+    fun `test valid names are accepted`() {
+        configBuilder.saveTemplate("chains", "valid-name_123", """{"name":"ok"}""")
+        configBuilder.saveTemplate("chains", "VALID_NAME", """{"name":"ok"}""")
+        configBuilder.saveTemplate("chains", "complex-Name_99", """{"name":"ok"}""")
+
+        val templates = configBuilder.listTemplates("chains")
+        assertTrue(templates.contains("valid-name_123"))
+        assertTrue(templates.contains("VALID_NAME"))
+        assertTrue(templates.contains("complex-Name_99"))
+    }
+
+    @Test
+    fun `test read and delete service config`() {
+        val path = configBuilder.buildServiceConfig("svc-42", """{"services":[{"name":"svc-42"}]}""")
+        assertTrue(File(path).exists())
+
+        val content = configBuilder.readServiceConfig("svc-42")
+        assertNotNull(content)
+
+        configBuilder.deleteServiceConfig("svc-42")
+        assertNull(configBuilder.readServiceConfig("svc-42"))
     }
 }

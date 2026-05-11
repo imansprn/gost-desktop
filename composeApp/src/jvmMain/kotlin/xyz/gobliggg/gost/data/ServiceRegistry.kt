@@ -27,8 +27,9 @@ data class ServiceEntity(
     val errorMessage: String? = null,
 )
 
-object ServiceRegistry {
-    private val dataDir = File(System.getProperty("user.home"), ".gost-manager/data")
+class ServiceRegistry(
+    dataDir: File = File(System.getProperty("user.home"), ".gost-manager/data"),
+) {
     private val servicesFile = File(dataDir, "services.json")
 
     private val json =
@@ -41,9 +42,16 @@ object ServiceRegistry {
     private val _services = MutableStateFlow<List<ServiceEntity>>(emptyList())
     val services: StateFlow<List<ServiceEntity>> = _services.asStateFlow()
 
+    companion object {
+        private val defaultInstance by lazy { ServiceRegistry() }
+
+        /** Convenience accessor for non-DI callers where injection isn't practical. */
+        fun default(): ServiceRegistry = defaultInstance
+    }
+
     fun initialize() {
-        if (!dataDir.exists()) {
-            dataDir.mkdirs()
+        if (!servicesFile.parentFile.exists()) {
+            servicesFile.parentFile.mkdirs()
         }
         load()
     }

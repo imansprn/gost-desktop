@@ -32,7 +32,9 @@ data class ServiceWizardDraftData(
     val metadata: Map<String, String> = emptyMap(),
 )
 
-object ServiceWizardDraftStore {
+class ServiceWizardDraftStore(
+    filePath: String = "${System.getProperty("user.home")}/.gost-manager/service-wizard-draft.json",
+) {
     private val json =
         Json {
             prettyPrint = true
@@ -40,8 +42,14 @@ object ServiceWizardDraftStore {
             encodeDefaults = true
         }
 
-    private val dir = File(System.getProperty("user.home"), ".gost-manager")
-    private val file = File(dir, "service-wizard-draft.json")
+    private val file = File(filePath)
+
+    companion object {
+        private val defaultInstance by lazy { ServiceWizardDraftStore() }
+
+        /** Convenience accessor for non-DI callers. */
+        fun default(): ServiceWizardDraftStore = defaultInstance
+    }
 
     fun load(): ServiceWizardDraftData? {
         return try {
@@ -54,7 +62,7 @@ object ServiceWizardDraftStore {
 
     fun save(draft: ServiceWizardDraftData) {
         try {
-            if (!dir.exists()) dir.mkdirs()
+            if (!file.parentFile.exists()) file.parentFile.mkdirs()
             file.writeText(json.encodeToString(draft))
         } catch (_: Exception) {
         }

@@ -39,8 +39,8 @@ object AppState {
         checkRuntimeValid(loaded.gostRuntime)
 
         // Ensure other systems boot up
-        ServiceRegistry.initialize()
-        ProcessManager.initialize()
+        ServiceRegistry.default().initialize()
+        ProcessManager.default().initialize()
 
         _isInitialized.value = true
     }

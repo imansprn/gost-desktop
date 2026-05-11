@@ -11,12 +11,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import xyz.gobliggg.gost.data.ServiceStatus
 import xyz.gobliggg.gost.ui.components.*
 import xyz.gobliggg.gost.ui.theme.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 class ServicesScreen(
     private val onCreateService: () -> Unit = {},
@@ -25,11 +27,13 @@ class ServicesScreen(
     @Composable
     override fun Content() {
         val model = rememberScreenModel { ServicesScreenModel() }
+        val SaASAction = Color(0xFF0F2B2B)
         val state by model.state.collectAsState()
         var deleteTarget by remember { mutableStateOf<String?>(null) }
         var rowMenuService by remember { mutableStateOf<String?>(null) }
         val sc = GostSemantics.colors
 
+        Box(modifier = Modifier.fillMaxSize()) {
         ScreenScaffold(
             header = {
                 SaaSScreenHeader(
@@ -223,6 +227,18 @@ class ServicesScreen(
                     },
                     onDismiss = { deleteTarget = null },
                 )
+            }
+        }
+            FloatingActionButton(
+                onClick = onCreateService,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(Spacing.xl),
+                containerColor = SaASAction,
+                contentColor = Color.White,
+                shape = RoundedCornerShape(GostRadius.md)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "New tunnel")
             }
         }
     }

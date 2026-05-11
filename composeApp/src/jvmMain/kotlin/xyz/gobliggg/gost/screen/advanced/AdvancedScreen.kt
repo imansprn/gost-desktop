@@ -44,7 +44,7 @@ class AdvancedScreen : Screen {
                 }
             }
 
-        var templates by remember { mutableStateOf(ConfigBuilder.listTemplates(templateType)) }
+        var templates by remember { mutableStateOf(ConfigBuilder.default().listTemplates(templateType)) }
         var showDialog by remember { mutableStateOf(false) }
         var editingObject by remember { mutableStateOf<Any?>(null) }
         var deleteTarget by remember { mutableStateOf<String?>(null) }
@@ -58,7 +58,7 @@ class AdvancedScreen : Screen {
             }
 
         fun reload() {
-            templates = ConfigBuilder.listTemplates(templateType)
+            templates = ConfigBuilder.default().listTemplates(templateType)
         }
 
         LaunchedEffect(activeTab) {
@@ -122,7 +122,7 @@ class AdvancedScreen : Screen {
                             contentPadding = PaddingValues(bottom = Spacing.xl),
                         ) {
                             items(filteredTemplates) { name ->
-                                val content = ConfigBuilder.readTemplate(templateType, name)
+                                val content = ConfigBuilder.default().readTemplate(templateType, name)
                                 AdvancedObjectRow(
                                     name = name,
                                     activeTab = activeTab,
@@ -186,7 +186,7 @@ class AdvancedScreen : Screen {
                                 is HostsDto -> json.encodeToString(obj)
                                 else -> ""
                             }
-                        ConfigBuilder.saveTemplate(templateType, name, stringContent)
+                        ConfigBuilder.default().saveTemplate(templateType, name, stringContent)
                         reload()
                         showDialog = false
                     }

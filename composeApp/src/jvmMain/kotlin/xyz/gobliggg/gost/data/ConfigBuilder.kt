@@ -3,13 +3,33 @@ package xyz.gobliggg.gost.data
 import kotlinx.serialization.json.*
 import java.io.File
 
-object ConfigBuilder {
-    private val configsDir = File(System.getProperty("user.home"), ".gost-manager/configs")
-    private val templatesDir = File(System.getProperty("user.home"), ".gost-manager/templates")
+class ConfigBuilder(
+    baseDir: File = File(System.getProperty("user.home"), ".gost-manager"),
+) {
+    private val configsDir = File(baseDir, "configs")
+    private val templatesDir = File(baseDir, "templates")
 
     init {
         if (!configsDir.exists()) configsDir.mkdirs()
         if (!templatesDir.exists()) templatesDir.mkdirs()
+    }
+
+    companion object {
+        private val defaultInstance by lazy { ConfigBuilder() }
+
+        /** Convenience accessor for non-DI callers (Compose screens). */
+        fun default(): ConfigBuilder = defaultInstance
+    }
+
+    /**
+     * Validates a name used for file operations.
+     * Only allows alphanumeric, underscore, and hyphen characters.
+     * This prevents path traversal attacks (e.g., "../../etc/passwd").
+     */
+    private fun validateFileName(name: String) {
+        if (!name.matches(Regex("^[a-zA-Z0-9_-]+$"))) {
+            throw IllegalArgumentException("Invalid name: '$name'. Only alphanumeric, underscore, and hyphen are allowed.")
+        }
     }
 
     // In advanced usage, this would compose multiple selected template files.
@@ -18,6 +38,7 @@ object ConfigBuilder {
         serviceId: String,
         jsonContent: String,
     ): String {
+        validateFileName(serviceId)
         val file = File(configsDir, "$serviceId.json")
 
         // Pretty print formatting or validation could go here
@@ -34,6 +55,7 @@ object ConfigBuilder {
     }
 
     fun deleteServiceConfig(serviceId: String) {
+        validateFileName(serviceId)
         val file = File(configsDir, "$serviceId.json")
         if (file.exists()) {
             file.delete()
@@ -41,6 +63,7 @@ object ConfigBuilder {
     }
 
     fun readServiceConfig(serviceId: String): String? {
+        validateFileName(serviceId)
         val file = File(configsDir, "$serviceId.json")
         return if (file.exists()) file.readText() else null
     }
@@ -57,6 +80,7 @@ object ConfigBuilder {
         type: String,
         name: String,
     ): String? {
+        validateFileName(name)
         val file = File(templatesDir, "$type/$name.json")
         if (file.exists()) return file.readText()
         return null
@@ -68,9 +92,19 @@ object ConfigBuilder {
         name: String,
         content: String,
     ) {
+        validateFileName(name)
         val dir = File(templatesDir, type)
         if (!dir.exists()) dir.mkdirs()
         val file = File(dir, "$name.json")
         file.writeText(content)
+    }
+
+    fun deleteTemplate(
+        type: String,
+        name: String,
+    ) {
+        validateFileName(name)
+        val file = File(templatesDir, "$type/$name.json")
+        if (file.exists()) file.delete()
     }
 }
