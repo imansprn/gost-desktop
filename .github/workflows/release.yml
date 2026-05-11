@@ -23,18 +23,22 @@ jobs:
             task: :composeApp:packageDmg
             artifact_glob: composeApp/build/compose/binaries/main/dmg/*.dmg
             artifact_name: macos-arm64
-          - os: macos-13
+            architecture: arm64
+          - os: macos-latest
             task: :composeApp:packageDmg
             artifact_glob: composeApp/build/compose/binaries/main/dmg/*.dmg
             artifact_name: macos-intel
+            architecture: x64
           - os: windows-latest
             task: :composeApp:packageMsi
             artifact_glob: composeApp/build/compose/binaries/main/msi/*.msi
             artifact_name: windows
+            architecture: x64
           - os: ubuntu-latest
             task: :composeApp:packageDeb
             artifact_glob: composeApp/build/compose/binaries/main/deb/*.deb
             artifact_name: linux
+            architecture: x64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -58,13 +62,19 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+          architecture: ${{ matrix.architecture }}
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build distribution
         shell: bash
-        run: ./gradlew ${{ matrix.task }} "-PappVersion=${{ steps.ver.outputs.version }}" --no-daemon
+        run: |
+          if [[ "${{ matrix.os }}" == macos* ]] && [ "${{ matrix.architecture }}" = "x64" ]; then
+            arch -x86_64 ./gradlew ${{ matrix.task }} "-PappVersion=${{ steps.ver.outputs.version }}" --no-daemon
+          else
+            ./gradlew ${{ matrix.task }} "-PappVersion=${{ steps.ver.outputs.version }}" --no-daemon
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
