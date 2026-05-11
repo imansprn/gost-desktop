@@ -203,6 +203,7 @@ class ChainsScreen(
                         }
                     }
                 }
+            }
             FloatingActionButton(
                 onClick = {
                     newChainName = ""
@@ -216,7 +217,6 @@ class ChainsScreen(
                 shape = RoundedCornerShape(GostRadius.md)
             ) {
                 Icon(Icons.Default.Add, contentDescription = "New chain")
-            }
             }
         }
 
