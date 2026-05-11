@@ -20,8 +20,13 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            artifact_name: macos
-            is_universal: true
+            task: :composeApp:packageDmg
+            artifact_glob: composeApp/build/compose/binaries/main/dmg/*.dmg
+            artifact_name: macos-arm64
+          - os: macos-13
+            task: :composeApp:packageDmg
+            artifact_glob: composeApp/build/compose/binaries/main/dmg/*.dmg
+            artifact_name: macos-intel
           - os: windows-latest
             task: :composeApp:packageMsi
             artifact_glob: composeApp/build/compose/binaries/main/msi/*.msi
@@ -48,10 +53,7 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION_3" >> "$GITHUB_OUTPUT"
 
-      # ── macOS (ARM64 + x64 → lipo) ──
-      - name: Set up JDK 21 (ARM64)
-        if: matrix.is_universal
-        id: setup-java-arm64
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -60,127 +62,11 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build ARM64
-        if: matrix.is_universal
-        env:
-          JAVA_HOME: ${{ steps.setup-java-arm64.outputs.path }}
-        run: ./gradlew clean :composeApp:createDistributable -Pcompose.desktop.targetArch=arm64 "-PappVersion=${{ steps.ver.outputs.version }}" --no-daemon
-
-      - name: Verify and Store ARM64 App
-        if: matrix.is_universal
-        run: |
-          mkdir -p build/arch/arm64
-          cp -R composeApp/build/compose/binaries/main/app/*.app build/arch/arm64/
-          APP_PATH=$(find build/arch/arm64 -name "*.app" -maxdepth 1)
-          EXE_NAME=$(basename "$APP_PATH" .app)
-          echo "Verifying ARM64 binary:"
-          file "$APP_PATH/Contents/MacOS/$EXE_NAME"
-          lipo -info "$APP_PATH/Contents/MacOS/$EXE_NAME"
-
-      - name: Set up JDK 21 (x64)
-        if: matrix.is_universal
-        id: setup-java-x64
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-          architecture: x64
-
-      - name: Build x64
-        if: matrix.is_universal
-        env:
-          JAVA_HOME: ${{ steps.setup-java-x64.outputs.path }}
-        run: arch -x86_64 ./gradlew clean :composeApp:createDistributable -Pcompose.desktop.targetArch=x64 "-PappVersion=${{ steps.ver.outputs.version }}" --no-daemon
-
-      - name: Verify and Store x64 App
-        if: matrix.is_universal
-        run: |
-          mkdir -p build/arch/x64
-          cp -R composeApp/build/compose/binaries/main/app/*.app build/arch/x64/
-          APP_PATH=$(find build/arch/x64 -name "*.app" -maxdepth 1)
-          EXE_NAME=$(basename "$APP_PATH" .app)
-          echo "Verifying x64 binary:"
-          file "$APP_PATH/Contents/MacOS/$EXE_NAME"
-          lipo -info "$APP_PATH/Contents/MacOS/$EXE_NAME"
-
-      # Merge every Mach-O (launcher, bundled JBR, dylibs) — launcher-only lipo leaves ARM64-only java on Intel.
-      - name: Create Universal .app
-        if: matrix.is_universal
-        shell: bash
-        run: |
-          set -euo pipefail
-          APP_NAME=$(basename "$(find build/arch/arm64 -maxdepth 1 -name '*.app')")
-          ARM_APP="build/arch/arm64/$APP_NAME"
-          X64_APP="build/arch/x64/$APP_NAME"
-          UNI_APP="build/arch/universal/$APP_NAME"
-          rm -rf build/arch/universal && mkdir -p build/arch/universal
-          cp -a "$ARM_APP" "$UNI_APP"
-          while IFS= read -r -d '' sigdir; do
-            rm -rf "$sigdir"
-          done < <(find "$UNI_APP" -type d -name _CodeSignature -print0)
-
-          merged=0
-          copied=0
-          while IFS= read -r -d '' XF; do
-            REL="${XF#$X64_APP/}"
-            AF="$ARM_APP/$REL"
-            UF="$UNI_APP/$REL"
-            if [[ ! -e "$AF" ]]; then
-              mkdir -p "$(dirname "$UF")"
-              cp -a "$XF" "$UF"
-              copied=$((copied + 1))
-              continue
-            fi
-            if file -b "$XF" | grep -q "Mach-O" && file -b "$AF" | grep -q "Mach-O"; then
-              if lipo -create "$AF" "$XF" -output "$UF" 2>/dev/null; then
-                merged=$((merged + 1))
-              fi
-            fi
-          done < <(find "$X64_APP" -type f -print0)
-          echo "Merged $merged Mach-O files; copied $copied x64-only files."
-
-          codesign --force --deep --sign - "$UNI_APP"
-
-          EXE="$UNI_APP/Contents/MacOS/${APP_NAME%.app}"
-          JAVA="$UNI_APP/Contents/runtime/Contents/Home/bin/java"
-          echo "Launcher:"
-          lipo -info "$EXE"
-          if [[ -f "$JAVA" ]]; then
-            echo "Bundled java:"
-            lipo -info "$JAVA"
-          fi
-
-      - name: Create DMG
-        if: matrix.is_universal
-        run: |
-          APP_PATH=$(find build/arch/universal -name "*.app" -maxdepth 1)
-          APP_NAME=$(basename "$APP_PATH")
-          DMG_NAME="GOST-Desktop-${{ steps.ver.outputs.version }}-macOS.dmg"
-          hdiutil create -volname "$APP_NAME" -srcfolder build/arch/universal -ov -format UDZO "$DMG_NAME"
-          echo "dmg_name=$DMG_NAME" >> $GITHUB_ENV
-
-      - name: Upload macOS
-        if: matrix.is_universal
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos
-          path: ${{ env.dmg_name }}
-
-      # ── Windows / Linux (simple single-task build) ──
-      - name: Set up JDK 21
-        if: ${{ !matrix.is_universal }}
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-
       - name: Build distribution
-        if: ${{ !matrix.is_universal }}
         shell: bash
         run: ./gradlew ${{ matrix.task }} "-PappVersion=${{ steps.ver.outputs.version }}" --no-daemon
 
       - name: Upload artifact
-        if: ${{ !matrix.is_universal }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
