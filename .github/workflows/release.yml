@@ -21,24 +21,28 @@ jobs:
         include:
           - os: macos-latest
             task: :composeApp:packageDmg
-            artifact_glob: composeApp/build/compose/binaries/main/dmg/*.dmg
+            artifact_glob: "composeApp/build/compose/binaries/main/dmg/*.dmg"
             artifact_name: macos-arm64
             architecture: arm64
+            platform: macos
           - os: macos-latest
             task: :composeApp:packageDmg
-            artifact_glob: composeApp/build/compose/binaries/main/dmg/*.dmg
+            artifact_glob: "composeApp/build/compose/binaries/main/dmg/*.dmg"
             artifact_name: macos-intel
             architecture: x64
+            platform: macos
           - os: windows-latest
             task: :composeApp:packageMsi
-            artifact_glob: composeApp/build/compose/binaries/main/msi/*.msi
+            artifact_glob: "composeApp/build/compose/binaries/main/msi/*.msi"
             artifact_name: windows
             architecture: x64
+            platform: windows
           - os: ubuntu-latest
             task: :composeApp:packageDeb
-            artifact_glob: composeApp/build/compose/binaries/main/deb/*.deb
+            artifact_glob: "composeApp/build/compose/binaries/main/deb/*.deb"
             artifact_name: linux
             architecture: x64
+            platform: linux
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -76,11 +80,34 @@ jobs:
             ./gradlew ${{ matrix.task }} "-PappVersion=${{ steps.ver.outputs.version }}" --no-daemon
           fi
 
+      - name: Prepare Artifact
+        shell: bash
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          PLATFORM="${{ matrix.platform }}"
+          ARCH="${{ matrix.architecture }}"
+          
+          if [ "$ARCH" = "x64" ] && [ "$PLATFORM" = "macos" ]; then
+            ARCH_NAME="intel"
+          elif [ "$ARCH" = "x64" ] && [ "$PLATFORM" = "linux" ]; then
+            ARCH_NAME="amd64"
+          else
+            ARCH_NAME="$ARCH"
+          fi
+
+          mkdir -p dist_output
+          FILE=$(ls ${{ matrix.artifact_glob }} | head -n 1)
+          EXT="${FILE##*.}"
+          NEW_FILE="gost-desktop_${VERSION}_${PLATFORM}-${ARCH_NAME}.${EXT}"
+          
+          cp "$FILE" "dist_output/$NEW_FILE"
+          echo "ARTIFACT_PATH=dist_output/$NEW_FILE" >> $GITHUB_ENV
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.artifact_glob }}
+          path: ${{ env.ARTIFACT_PATH }}
           if-no-files-found: error
 
   release:
