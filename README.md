@@ -1,8 +1,11 @@
 # GOST Desktop
 
+[![Build](https://github.com/imansprn/gost-desktop/actions/workflows/build.yml/badge.svg)](https://github.com/imansprn/gost-desktop/actions/workflows/build.yml)
 [![Release](https://img.shields.io/github/v/release/imansprn/gost-desktop?style=flat-square)](https://github.com/imansprn/gost-desktop/releases)
+[![Coverage Status](https://coveralls.io/repos/github/imansprn/gost-desktop/badge.svg?branch=main)](https://coveralls.io/github/imansprn/gost-desktop?branch=main)
 [![License](https://img.shields.io/github/license/imansprn/gost-desktop?style=flat-square)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue?style=flat-square)](#)
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/imansprn/gost-desktop?utm_source=oss&utm_medium=github&utm_campaign=imansprn%2Fgost-desktop&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
 
 Desktop application for managing a **[GOST](https://github.com/go-gost/gost)** instance through its HTTP API. This project is an **independent community client**; it is not affiliated with or endorsed by the upstream GOST maintainers unless they say otherwise.
 

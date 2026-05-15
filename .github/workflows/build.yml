@@ -32,5 +32,13 @@ jobs:
       - name: Compile JVM
         run: ./gradlew :composeApp:compileKotlinJvm --no-daemon
 
-      - name: JVM tests
-        run: ./gradlew :composeApp:jvmTest --no-daemon
+      - name: Generate Code Coverage
+        run: ./gradlew koverXmlReport --no-daemon
+
+      - name: Upload coverage to Coveralls
+        if: matrix.os == 'ubuntu-latest'
+        uses: coverallsapp/github-action@v2
+        with:
+          file: build/reports/kover/report.xml
+          format: jacoco
+          coveralls-token: ${{ secrets.COVERALLS_REPO_TOKEN }}
