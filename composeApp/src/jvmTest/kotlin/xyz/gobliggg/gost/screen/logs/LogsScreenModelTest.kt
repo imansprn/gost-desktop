@@ -1,6 +1,5 @@
 package xyz.gobliggg.gost.screen.logs
-import cafe.adriel.voyager.core.model.screenModelScope
-import kotlinx.coroutines.cancel
+
 
 
 import io.mockk.every

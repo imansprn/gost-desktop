@@ -8,8 +8,7 @@ class FormattersTest {
     fun testFormatBytes() {
         assertEquals("0 B", formatBytes(0))
         assertEquals("500 B", formatBytes(500))
-        // Note: String.format behavior can be locale-dependent. 
-        // Assuming US locale for tests (standard in CI/Gradle)
+        // Note: String.format behavior is fixed to Locale.US in implementation.
         assertEquals("1.0 KB", formatBytes(1024))
         assertEquals("1.5 KB", formatBytes(1536))
         assertEquals("1.0 MB", formatBytes(1024 * 1024))

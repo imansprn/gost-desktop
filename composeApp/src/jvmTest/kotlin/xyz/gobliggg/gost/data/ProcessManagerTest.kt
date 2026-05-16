@@ -16,6 +16,13 @@ class ProcessManagerTest {
     fun setup() {
         registry = mockk(relaxed = true)
         manager = ProcessManager(registry)
+
+        // Initialize AppState with a temporary repository to avoid UninitializedPropertyException
+        val tempDir = java.io.File(System.getProperty("java.io.tmpdir"), "gost-test-pm-${java.util.UUID.randomUUID()}")
+        tempDir.mkdirs()
+        kotlinx.coroutines.runBlocking {
+            AppState.initialize(LocalConfigRepository(tempDir))
+        }
     }
 
     @Test
@@ -36,7 +43,7 @@ class ProcessManagerTest {
         manager.startService("s1")
         
         // This should trigger the catch block in startService
-        verify { registry.updateServiceStatus("s1", ServiceStatus.ERROR, pid = null, errorMessage = match { it?.startsWith("Failed to start") == true }) }
+        verify { registry.updateServiceStatus("s1", ServiceStatus.ERROR, pid = null, errorMessage = match { it.startsWith("Failed to start") == true }) }
     }
 
     @Test
@@ -57,6 +64,10 @@ class ProcessManagerTest {
     fun `test restart service`() {
         every { registry.getService("s1") } returns ServiceEntity("s1", "S1", configPath = "/tmp/c1")
         manager.restartService("s1")
+        
         // Should stop then start
+        // verify start attempt (with error because binary doesn't exist, but it's an attempt)
+        verify { registry.getService("s1") }
+        verify { registry.updateServiceStatus("s1", ServiceStatus.ERROR, any(), any()) }
     }
 }

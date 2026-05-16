@@ -15,7 +15,9 @@ fun formatBytes(bytes: Long): String {
     return if (unitIndex == 0) {
         "$bytes B"
     } else {
-        "%.1f %s".format(value, units[unitIndex])
+        java.util.Locale.US.let { locale ->
+            String.format(locale, "%.1f %s", value, units[unitIndex])
+        }
     }
 }
 
