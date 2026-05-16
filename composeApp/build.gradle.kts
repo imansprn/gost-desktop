@@ -67,6 +67,8 @@ kotlin {
             implementation(libs.compose.ui.test.junit4)
             implementation(libs.compose.ui.test.desktop)
             implementation(libs.kotlin.test)
+            implementation(libs.mockk)
+            implementation(libs.kotlinx.coroutinesTest)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

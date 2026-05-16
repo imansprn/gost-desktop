@@ -1,4 +1,7 @@
 package xyz.gobliggg.gost.screen.dashboard
+import cafe.adriel.voyager.core.model.screenModelScope
+import kotlinx.coroutines.cancel
+
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule

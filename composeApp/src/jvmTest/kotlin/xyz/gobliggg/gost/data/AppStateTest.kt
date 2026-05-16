@@ -38,4 +38,35 @@ class AppStateTest {
         assertNull(AppState.takePendingShellRoute(), "api-error routes should be normalized to null")
     }
 
+    @Test
+    fun `test disconnect`() {
+        AppState.updateSettings { it.copy(gostRuntime = it.gostRuntime.copy(binaryPath = "/invalid/path")) }
+        AppState.disconnect()
+        assertEquals("", AppState.settings.value.gostRuntime.binaryPath)
+    }
+
+    @Test
+    fun `test profiles stubs`() {
+        assertTrue(AppState.getProfiles().isEmpty())
+        AppState.deleteProfile("any") // should not throw
+    }
+
+    @Test
+    fun `test theme stub`() {
+        assertTrue(AppState.isDarkTheme)
+    }
+
+    @Test
+    fun `test connection profile data class`() {
+        val profile = AppState.ConnectionProfile("1", "test", "http://host")
+        assertEquals("1", profile.id)
+        assertEquals("test", profile.name)
+        assertEquals("http://host", profile.baseUrl)
+        
+        val copy = profile.copy(id = "2")
+        assertEquals("2", copy.id)
+        assertEquals(profile, profile)
+        assertTrue(profile.hashCode() != 0)
+        assertTrue(profile.toString().contains("ConnectionProfile"))
+    }
 }
