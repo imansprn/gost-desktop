@@ -65,7 +65,7 @@ class AppStateTest {
         
         val copy = profile.copy(id = "2")
         assertEquals("2", copy.id)
-        assertEquals(profile, profile)
+        assertEquals(profile, profile.copy())
         assertTrue(profile.hashCode() != 0)
         assertTrue(profile.toString().contains("ConnectionProfile"))
     }
