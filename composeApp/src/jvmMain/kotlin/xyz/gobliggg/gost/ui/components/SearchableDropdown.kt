@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import xyz.gobliggg.gost.ui.theme.Spacing
 
 /**
  * Long-list string picker: opens a [DropdownMenu] with a filter field and scrollable matches.
@@ -54,20 +55,14 @@ fun SearchableStringDropdown(
             onDismissRequest = { expanded = false },
         ) {
             Column(Modifier.widthIn(min = menuWidthMin.dp)) {
-                OutlinedTextField(
+                SaaSTextField(
                     value = filter,
                     onValueChange = { filter = it },
-                    placeholder = {
-                        Text(
-                            searchPlaceholder,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.outline,
-                        )
-                    },
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-                    colors = saasTextFieldColors(),
+                    placeholder = searchPlaceholder,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.sm, vertical = Spacing.xs),
                 )
                 HorizontalDivider()
                 Column(Modifier.heightIn(max = menuMaxHeight.dp).verticalScroll(rememberScrollState())) {

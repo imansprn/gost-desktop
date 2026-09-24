@@ -39,10 +39,12 @@ class AppStateTest {
     }
 
     @Test
-    fun `test disconnect`() {
+    fun `test disconnect stops engine without clearing runtime configuration`() {
         AppState.updateSettings { it.copy(gostRuntime = it.gostRuntime.copy(binaryPath = "/invalid/path")) }
         AppState.disconnect()
-        assertEquals("", AppState.settings.value.gostRuntime.binaryPath)
+
+        assertEquals("/invalid/path", AppState.settings.value.gostRuntime.binaryPath)
+        assertTrue(!AppState.isEngineRunning.value)
     }
 
     @Test

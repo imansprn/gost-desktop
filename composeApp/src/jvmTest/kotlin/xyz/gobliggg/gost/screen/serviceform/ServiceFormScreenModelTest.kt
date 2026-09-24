@@ -40,6 +40,8 @@ class ServiceFormScreenModelTest {
         processManager = mockk(relaxed = true)
         
         every { draftStore.load() } returns null
+        every { configBuilder.isValidName(any()) } returns true
+        every { registry.getService(any()) } returns null
     }
 
     @After
@@ -127,7 +129,7 @@ class ServiceFormScreenModelTest {
         // Empty state, next step should fail
         assertFalse(model.nextStep())
         assertEquals(0, model.state.value.currentStep)
-        assertEquals("Required, no spaces", model.state.value.nameError)
+        assertEquals("Name is required", model.state.value.nameError)
 
         model.updateName("Svc")
         model.updateAddr(":8080")
@@ -219,7 +221,7 @@ class ServiceFormScreenModelTest {
         var saved = false
         model.save { saved = true }
         assertTrue(saved)
-        io.mockk.verify { processManager.stopService("EditSvc") } // stops old process
+        io.mockk.verify { processManager.stopService("EditSvc", preserveIntent = true) }
 
         model.onDispose()
         testScheduler.advanceUntilIdle()

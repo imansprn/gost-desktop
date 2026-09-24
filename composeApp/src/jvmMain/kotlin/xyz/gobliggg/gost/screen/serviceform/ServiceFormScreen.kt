@@ -23,6 +23,7 @@ import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import xyz.gobliggg.gost.ui.GlobalWindowShortcuts
+import xyz.gobliggg.gost.ui.UnsavedChangesGuard
 import xyz.gobliggg.gost.ui.components.*
 import xyz.gobliggg.gost.ui.components.ChainFormDialog
 import xyz.gobliggg.gost.ui.components.SearchableStringDropdown
@@ -45,6 +46,44 @@ class ServiceFormScreen(
         var chainDialogOpen by remember { mutableStateOf(false) }
         val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
         val sc = GostSemantics.colors
+
+        if (!state.isEditMode && state.draftRecovered) {
+            SaaSDialog(
+                title = "Resume unfinished tunnel?",
+                onDismissRequest = { model.resumeRecoveredDraft() },
+                size = SaaSDialogSize.Sm,
+            ) {
+                Text(
+                    "An unfinished tunnel draft was found. Resume it or start with an empty form.",
+                    color = sc.textSecondary,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(Modifier.height(Spacing.xl))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    SaaSButton(
+                        text = "Start Fresh",
+                        onClick = { model.startFreshDraft() },
+                        type = SaaSButtonType.SECONDARY,
+                    )
+                    Spacer(Modifier.width(Spacing.sm))
+                    SaaSButton(
+                        text = "Resume Draft",
+                        onClick = { model.resumeRecoveredDraft() },
+                        type = SaaSButtonType.PRIMARY,
+                    )
+                }
+            }
+        }
+
+        LaunchedEffect(state.isDirty) {
+            UnsavedChangesGuard.setDirty(state.isDirty)
+        }
+        DisposableEffect(Unit) {
+            onDispose { UnsavedChangesGuard.clear() }
+        }
 
         DisposableEffect(model, onDone, state.currentStep) {
             if (state.currentStep == 2) {
@@ -93,13 +132,13 @@ class ServiceFormScreen(
                     }
 
                     if (state.errorMessage != null) {
-                        Spacer(Modifier.height(Spacing.md))
+                        Spacer(Modifier.height(Spacing.sm))
                         Banner(state.errorMessage!!, type = BannerType.Error)
                     }
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(Spacing.xl))
                 }
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(Spacing.xl))
 
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     SaaSButton(
@@ -129,30 +168,30 @@ class ServiceFormScreen(
             }
 
             // ── Right: Live Preview ──
-            VerticalDivider(thickness = 1.dp, color = sc.borderSubtle)
+            VerticalDivider(thickness = GostControlSize.borderWidth, color = sc.borderSubtle)
             Column(
                 modifier =
                     Modifier
-                        .width(320.dp)
+                        .width(GostLayoutSize.editorSidebar)
                         .fillMaxHeight()
                         .background(sc.surfacePanel)
                         .padding(Spacing.lg),
             ) {
                 SaaSTableHeader("LIVE PREVIEW")
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(Spacing.sm))
                 val preview = remember(state) { model.buildPreviewJson() }
                 Text(
                     text = preview,
                     color = Cyan300,
-                    fontSize = 11.sp,
+                    style = GostTextStyles.logLine,
                     fontFamily = MonoFontFamily,
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(RoundedCornerShape(GostRadius.md))
                             .background(sc.surfaceApp)
-                            .border(1.dp, sc.borderSubtle, RoundedCornerShape(12.dp))
-                            .padding(12.dp)
+                            .border(GostControlSize.borderWidth, sc.borderSubtle, RoundedCornerShape(GostRadius.md))
+                            .padding(Spacing.lg)
                             .verticalScroll(rememberScrollState()),
                 )
             }
@@ -193,7 +232,7 @@ private fun StepIndicator(
         verticalAlignment = Alignment.CenterVertically,
         modifier =
             Modifier
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(GostRadius.sm))
                 .clickable {
                     onStepClick(step)
                     focusManager.clearFocus()
@@ -201,8 +240,8 @@ private fun StepIndicator(
     ) {
         Box(
             Modifier
-                .size(24.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .size(GostControlSize.stepIndicator)
+                .clip(RoundedCornerShape(GostRadius.md))
                 .background(
                     if (isActive || isDone) {
                         sc.stateSelected
@@ -212,14 +251,25 @@ private fun StepIndicator(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            Text("${step + 1}", color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "${step + 1}",
+                color = color,
+                style = GostTextStyles.pillLabel.copy(fontWeight = FontWeight.Bold),
+            )
         }
         Spacer(Modifier.width(Spacing.sm))
-        Text(label, color = color, fontSize = 12.sp, fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal)
+        Text(
+            label,
+            color = color,
+            style =
+                GostTextStyles.bodyCompact.copy(
+                    fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
+                ),
+        )
         if (step < 2) {
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(Spacing.sm))
             Text("—", color = MaterialTheme.colorScheme.outlineVariant)
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(Spacing.sm))
         }
     }
 }
@@ -237,7 +287,7 @@ private fun Step1Basic(
         isError = state.nameError != null,
         helperText = state.nameError ?: "Unique identifier, no spaces allowed",
     )
-    Spacer(Modifier.height(16.dp))
+    Spacer(Modifier.height(Spacing.xl))
     SaaSTextField(
         value = state.addr,
         onValueChange = model::updateAddr,
@@ -266,24 +316,15 @@ private fun Step2Protocol(
         color = MaterialTheme.colorScheme.outline,
         style = MaterialTheme.typography.labelSmall,
     )
-    Spacer(Modifier.height(4.dp))
-    SearchableStringDropdown(
-        selected = state.handlerType,
+    Spacer(Modifier.height(Spacing.xs))
+    DropdownField(
+        value = state.handlerType,
         options = HANDLER_TYPES,
         onSelect = model::updateHandlerType,
-        searchPlaceholder = "Search handler types…",
-    ) { onOpen ->
-        OutlinedButton(
-            onClick = {
-                onOpen()
-                focusManager.clearFocus()
-            },
-            shape = RoundedCornerShape(8.dp),
-        ) {
-            Text(state.handlerType, fontSize = 13.sp)
-        }
-    }
-    Spacer(Modifier.height(16.dp))
+        searchable = true,
+        contentDescription = "Handler type",
+    )
+    Spacer(Modifier.height(Spacing.xl))
     Text(
         "Listener Type",
         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -294,18 +335,15 @@ private fun Step2Protocol(
         color = MaterialTheme.colorScheme.outline,
         style = MaterialTheme.typography.labelSmall,
     )
-    Spacer(Modifier.height(4.dp))
-    SearchableStringDropdown(
-        selected = state.listenerType,
+    Spacer(Modifier.height(Spacing.xs))
+    DropdownField(
+        value = state.listenerType,
         options = LISTENER_TYPES,
         onSelect = model::updateListenerType,
-        searchPlaceholder = "Search listener types…",
-    ) { onOpen ->
-        OutlinedButton(onClick = onOpen, shape = RoundedCornerShape(8.dp)) {
-            Text(state.listenerType, fontSize = 13.sp)
-        }
-    }
-    Spacer(Modifier.height(16.dp))
+        searchable = true,
+        contentDescription = "Listener type",
+    )
+    Spacer(Modifier.height(Spacing.xl))
     Text(
         "Inline Auth (optional)",
         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -316,8 +354,8 @@ private fun Step2Protocol(
         color = MaterialTheme.colorScheme.outline,
         style = MaterialTheme.typography.labelSmall,
     )
-    Spacer(Modifier.height(4.dp))
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Spacer(Modifier.height(Spacing.xs))
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
         SaaSTextField(
             value = state.authUsername,
             onValueChange = model::updateAuthUsername,
@@ -331,13 +369,16 @@ private fun Step2Protocol(
             modifier = Modifier.weight(1f),
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
-                IconButton(onClick = {
-                    passwordVisible = !passwordVisible
-                    focusManager.clearFocus()
-                }) {
+                SaaSIconButton(
+                    onClick = {
+                        passwordVisible = !passwordVisible
+                        focusManager.clearFocus()
+                    },
+                ) {
                     Icon(
                         imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                         contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                        modifier = Modifier.size(GostControlSize.icon),
                     )
                 }
             },
@@ -357,63 +398,54 @@ private fun Step3Advanced(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         style = MaterialTheme.typography.labelMedium,
     )
-    Spacer(Modifier.height(4.dp))
+    Spacer(Modifier.height(Spacing.xs))
     Text(
         "When set, traffic is forwarded to these host:port targets after the handler runs (often used with a chain). Leave empty for simple proxies.",
         color = MaterialTheme.colorScheme.outline,
         style = MaterialTheme.typography.labelSmall,
-        lineHeight = 14.sp,
     )
-    Spacer(Modifier.height(8.dp))
+    Spacer(Modifier.height(Spacing.sm))
     state.forwarderNodes.forEachIndexed { index, pair ->
         val (nodeName, nodeAddr) = pair
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            OutlinedTextField(
+            SaaSTextField(
                 value = nodeName,
                 onValueChange = { model.updateForwarderName(index, it) },
                 modifier = Modifier.weight(0.38f),
-                singleLine = true,
-                shape = RoundedCornerShape(8.dp),
-                textStyle = MaterialTheme.typography.bodyMedium.copy(color = sc.textPrimary),
-                placeholder = {
-                    Text("Name", color = sc.textMuted, style = MaterialTheme.typography.bodyMedium)
-                },
-                colors = saasTextFieldColors(),
+                placeholder = "Name",
             )
-            OutlinedTextField(
+            SaaSTextField(
                 value = nodeAddr,
                 onValueChange = { model.updateForwarderAddr(index, it) },
                 modifier = Modifier.weight(0.52f),
-                singleLine = true,
-                shape = RoundedCornerShape(8.dp),
-                textStyle = MaterialTheme.typography.bodyMedium.copy(color = sc.textPrimary),
-                placeholder = {
-                    Text(
-                        "192.168.1.104:9014",
-                        color = sc.textMuted,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                },
-                colors = saasTextFieldColors(),
+                placeholder = "192.168.1.104:9014",
             )
-            TextButton(onClick = { model.removeForwarderRow(index) }) {
-                Text("Remove", fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
+            IconTooltipButton(
+                tooltip = "Remove forwarder",
+                onClick = { model.removeForwarderRow(index) },
+            ) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Remove forwarder",
+                    tint = sc.statusError,
+                    modifier = Modifier.size(GostControlSize.icon),
+                )
             }
         }
         Spacer(Modifier.height(Spacing.sm))
     }
-    OutlinedButton(
+    SaaSButton(
+        text = "Add forwarder target",
         onClick = { model.addForwarderRow() },
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-    ) {
-        Text("+ Add forwarder target", fontSize = 12.sp)
-    }
-    Spacer(Modifier.height(24.dp))
+        type = SaaSButtonType.SECONDARY,
+        icon = Icons.Default.Add,
+    )
+    Spacer(Modifier.height(Spacing.xxl))
 
     // ── Protocol Metadata ──
     Text(
@@ -421,18 +453,18 @@ private fun Step3Advanced(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         style = MaterialTheme.typography.labelMedium,
     )
-    Spacer(Modifier.height(4.dp))
+    Spacer(Modifier.height(Spacing.xs))
     Text(
         "Custom flags for specific protocols (e.g., 'path' for grpc, 'method' for shadowsocks).",
         color = MaterialTheme.colorScheme.outline,
         style = MaterialTheme.typography.labelSmall,
     )
-    Spacer(Modifier.height(12.dp))
+    Spacer(Modifier.height(Spacing.lg))
 
     state.metadata.forEachIndexed { index, pair ->
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             SaaSTextField(
@@ -447,40 +479,45 @@ private fun Step3Advanced(
                 placeholder = "Value",
                 modifier = Modifier.weight(0.5f),
             )
-            IconButton(
+            IconTooltipButton(
+                tooltip = "Remove protocol flag",
                 onClick = { model.removeMetadataRow(index) },
-                modifier = Modifier.size(24.dp),
             ) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = sc.textMuted, modifier = Modifier.size(16.dp))
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Remove protocol flag",
+                    tint = sc.textMuted,
+                    modifier = Modifier.size(GostControlSize.icon),
+                )
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(Spacing.sm))
     }
-    OutlinedButton(
+    SaaSButton(
+        text = "Add protocol flag",
         onClick = { model.addMetadataRow() },
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-    ) {
-        Text("+ Add protocol flag", fontSize = 12.sp)
-    }
-    Spacer(Modifier.height(24.dp))
+        type = SaaSButtonType.SECONDARY,
+        icon = Icons.Default.Add,
+    )
+    Spacer(Modifier.height(Spacing.xxl))
 
     NullableDropdown("Chain", state.availableChains, state.chainRef) { model.updateChainRef(it) }
-    Spacer(Modifier.height(8.dp))
-    OutlinedButton(
+    Spacer(Modifier.height(Spacing.sm))
+    SaaSButton(
+        text = "Create new chain…",
         onClick = onCreateChain,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-    ) {
-        Text("+ Create new chain…", fontSize = 12.sp)
-    }
-    Spacer(Modifier.height(12.dp))
+        type = SaaSButtonType.SECONDARY,
+        icon = Icons.Default.Add,
+    )
+    Spacer(Modifier.height(Spacing.lg))
     NullableDropdown("Auther", state.availableAuthers, state.autherRef) { model.updateAutherRef(it) }
-    Spacer(Modifier.height(12.dp))
+    Spacer(Modifier.height(Spacing.lg))
     NullableDropdown("Bypass", state.availableBypasses, state.bypassRef) { model.updateBypassRef(it) }
-    Spacer(Modifier.height(12.dp))
+    Spacer(Modifier.height(Spacing.lg))
     NullableDropdown("Admission", state.availableAdmissions, state.admissionRef) { model.updateAdmissionRef(it) }
-    Spacer(Modifier.height(12.dp))
+    Spacer(Modifier.height(Spacing.lg))
     NullableDropdown("Limiter", state.availableLimiters, state.limiterRef) { model.updateLimiterRef(it) }
 }
 
@@ -491,15 +528,10 @@ private fun NullableDropdown(
     selected: String?,
     onSelect: (String?) -> Unit,
 ) {
-    Text(
-        label,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        style = MaterialTheme.typography.labelMedium,
-    )
-    Spacer(Modifier.height(4.dp))
     val none = "(none)"
     val opts = remember(options) { listOf(none) + options }
     DropdownField(
+        label = label,
         value = selected ?: none,
         options = opts,
         searchable = opts.size >= 10,

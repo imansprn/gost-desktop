@@ -25,6 +25,9 @@ object AppState {
     private val _settings = MutableStateFlow(AppSettings())
     val settings: StateFlow<AppSettings> = _settings.asStateFlow()
 
+    private val _isEngineRunning = MutableStateFlow(false)
+    val isEngineRunning: StateFlow<Boolean> = _isEngineRunning.asStateFlow()
+
     private var pendingShellRoute: String? = null
 
     private lateinit var configRepo: LocalConfigRepository
@@ -41,6 +44,13 @@ object AppState {
         // Ensure other systems boot up
         ServiceRegistry.default().initialize()
         ProcessManager.default().initialize()
+
+        _isEngineRunning.value = _isRuntimeValid.value && loaded.gostRuntime.autoStart
+        if (_isEngineRunning.value) {
+            ServiceRegistry.default().services.value
+                .filter { it.desiredRunning }
+                .forEach { ProcessManager.default().startService(it.id, recordIntent = false) }
+        }
 
         _isInitialized.value = true
     }
@@ -73,11 +83,27 @@ object AppState {
         return r
     }
 
-    // Keeping these to not break App.kt aggressively before we remove them from App.kt
+    fun startEngine() {
+        if (!_isRuntimeValid.value || _isEngineRunning.value) return
+        _isEngineRunning.value = true
+        ServiceRegistry.default().services.value
+            .filter { it.desiredRunning }
+            .forEach { ProcessManager.default().startService(it.id, recordIntent = false) }
+    }
+
+    fun stopEngine() {
+        if (!_isEngineRunning.value) return
+        ProcessManager.default().stopAll(preserveIntent = true)
+        _isEngineRunning.value = false
+    }
+
+    fun toggleEngine() {
+        if (_isEngineRunning.value) stopEngine() else startEngine()
+    }
+
+    // Legacy alias used by the shell.
     fun disconnect() {
-        updateSettings {
-            it.copy(gostRuntime = it.gostRuntime.copy(binaryPath = ""))
-        }
+        stopEngine()
     }
 
     // ── Legacy profile stubs (local-only mode has no connection profiles) ──

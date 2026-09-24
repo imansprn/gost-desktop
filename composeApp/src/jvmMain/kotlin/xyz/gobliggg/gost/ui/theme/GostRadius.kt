@@ -20,6 +20,9 @@ object GostRadius {
     /** Panels / cards. */
     val lg = 16.dp
 
+    /** Large hero surfaces / illustrations. */
+    val xl = 24.dp
+
     /** Full-round pill shapes. */
     val pill = 100.dp
 

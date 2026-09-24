@@ -26,24 +26,35 @@ class ProcessManagerTest {
     }
 
     @Test
-    fun `test start service with invalid runtime`() {
+    fun `test start service is blocked while engine is stopped`() {
         AppState.updateSettings { it.copy(gostRuntime = it.gostRuntime.copy(binaryPath = "")) }
         every { registry.getService("s1") } returns ServiceEntity("s1", "S1", configPath = "/tmp/c1")
-        
+
         manager.startService("s1")
-        
-        verify { registry.updateServiceStatus("s1", ServiceStatus.ERROR, errorMessage = "GOST runtime path not set") }
+
+        verify {
+            registry.updateServiceStatus(
+                "s1",
+                ServiceStatus.IDLE,
+                errorMessage = "Engine is stopped",
+            )
+        }
     }
 
     @Test
-    fun `test start service with non-existent binary`() {
+    fun `test engine gate prevents launching a non-existent binary`() {
         AppState.updateSettings { it.copy(gostRuntime = it.gostRuntime.copy(binaryPath = "/tmp/non-existent-binary")) }
         every { registry.getService("s1") } returns ServiceEntity("s1", "S1", configPath = "/tmp/c1")
-        
+
         manager.startService("s1")
-        
-        // This should trigger the catch block in startService
-        verify { registry.updateServiceStatus("s1", ServiceStatus.ERROR, pid = null, errorMessage = match { it.startsWith("Failed to start") == true }) }
+
+        verify {
+            registry.updateServiceStatus(
+                "s1",
+                ServiceStatus.IDLE,
+                errorMessage = "Engine is stopped",
+            )
+        }
     }
 
     @Test
@@ -61,13 +72,18 @@ class ProcessManagerTest {
     }
 
     @Test
-    fun `test restart service`() {
+    fun `test restart service respects stopped engine`() {
         every { registry.getService("s1") } returns ServiceEntity("s1", "S1", configPath = "/tmp/c1")
+
         manager.restartService("s1")
-        
-        // Should stop then start
-        // verify start attempt (with error because binary doesn't exist, but it's an attempt)
-        verify { registry.getService("s1") }
-        verify { registry.updateServiceStatus("s1", ServiceStatus.ERROR, any(), any()) }
+
+        verify(atLeast = 1) { registry.getService("s1") }
+        verify {
+            registry.updateServiceStatus(
+                "s1",
+                ServiceStatus.IDLE,
+                errorMessage = "Engine is stopped",
+            )
+        }
     }
 }

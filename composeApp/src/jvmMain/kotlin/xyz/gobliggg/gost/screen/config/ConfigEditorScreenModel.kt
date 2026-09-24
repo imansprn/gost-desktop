@@ -4,8 +4,15 @@ import cafe.adriel.voyager.core.model.ScreenModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import xyz.gobliggg.gost.data.AppState
 import xyz.gobliggg.gost.data.ConfigBuilder
+import xyz.gobliggg.gost.data.ProcessManager
 import xyz.gobliggg.gost.data.ServiceRegistry
+import xyz.gobliggg.gost.data.ServiceStatus
 import xyz.gobliggg.gost.ui.ShellFeedback
 import java.io.File
 
@@ -24,6 +31,7 @@ data class ConfigEditorUiState(
 class ConfigEditorScreenModel(
     private val serviceRegistry: ServiceRegistry = ServiceRegistry.default(),
     private val configBuilder: ConfigBuilder = ConfigBuilder.default(),
+    private val processManager: ProcessManager = ProcessManager.default(),
 ) : ScreenModel {
     private val _state = MutableStateFlow(ConfigEditorUiState())
     val state: StateFlow<ConfigEditorUiState> = _state.asStateFlow()
@@ -75,19 +83,51 @@ class ConfigEditorScreenModel(
         _state.value = s.copy(isSaving = true, errorMessage = null, successMessage = null)
 
         try {
+            val root = Json.parseToJsonElement(s.content).jsonObject
+            val existing =
+                serviceRegistry.getService(serviceId)
+                    ?: throw IllegalStateException("Tunnel '$serviceId' no longer exists")
+            val wasRunning = existing.status == ServiceStatus.RUNNING
+            val newAddr =
+                root["services"]
+                    ?.jsonArray
+                    ?.firstOrNull()
+                    ?.jsonObject
+                    ?.get("addr")
+                    ?.jsonPrimitive
+                    ?.content
+                    ?: existing.addr
+
             configBuilder.buildServiceConfig(serviceId, s.content)
+            serviceRegistry.addOrUpdateService(existing.copy(addr = newAddr))
+
+            if (wasRunning && AppState.isEngineRunning.value) {
+                processManager.restartService(serviceId)
+            }
+
             _state.value =
                 _state.value.copy(
                     isSaving = false,
                     isDirty = false,
-                    successMessage = "Configuration saved to disk.",
+                    successMessage =
+                        if (wasRunning && AppState.isEngineRunning.value) {
+                            "Configuration saved and tunnel restarted."
+                        } else {
+                            "Configuration saved to disk."
+                        },
                 )
-            ShellFeedback.showSnackbar("Configuration saved")
+            ShellFeedback.showSnackbar(
+                if (wasRunning && AppState.isEngineRunning.value) {
+                    "Configuration saved and tunnel restarted"
+                } else {
+                    "Configuration saved"
+                },
+            )
         } catch (e: Exception) {
             _state.value =
                 _state.value.copy(
                     isSaving = false,
-                    errorMessage = "Save failed: ${e.message}",
+                    errorMessage = "Save failed: ${e.message ?: "Invalid JSON"}",
                 )
         }
     }

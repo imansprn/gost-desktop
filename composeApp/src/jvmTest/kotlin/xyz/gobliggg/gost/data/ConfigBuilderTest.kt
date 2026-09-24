@@ -5,6 +5,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import kotlinx.serialization.json.Json
 import java.io.File
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -53,7 +54,10 @@ class ConfigBuilderTest {
 
         val loaded = configBuilder.readTemplate(type, name)
         assertNotNull(loaded)
-        assertEquals(content, loaded)
+        assertEquals(
+            Json.parseToJsonElement(content),
+            Json.parseToJsonElement(loaded),
+        )
 
         val templates = configBuilder.listTemplates(type)
         assertTrue(templates.contains(name))

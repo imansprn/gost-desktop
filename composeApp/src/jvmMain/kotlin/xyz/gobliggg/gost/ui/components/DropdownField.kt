@@ -15,6 +15,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import xyz.gobliggg.gost.ui.theme.GostControlSize
 import xyz.gobliggg.gost.ui.theme.GostRadius
 import xyz.gobliggg.gost.ui.theme.GostSemantics
 import xyz.gobliggg.gost.ui.theme.Spacing
@@ -114,7 +115,7 @@ private fun DropdownFieldAnchor(
         BasicTextField(
             value = display,
             onValueChange = {},
-            modifier = Modifier.fillMaxWidth().height(40.dp),
+            modifier = Modifier.fillMaxWidth().height(GostControlSize.standardHeight),
             readOnly = true,
             enabled = enabled,
             singleLine = true,
@@ -142,6 +143,7 @@ private fun DropdownFieldAnchor(
                             imageVector = Icons.Default.ArrowDropDown,
                             contentDescription = null,
                             tint = sc.textMuted,
+                            modifier = Modifier.size(GostControlSize.iconLarge),
                         )
                     },
                     container = {
@@ -157,7 +159,7 @@ private fun DropdownFieldAnchor(
                             unfocusedBorderThickness = 1.dp,
                         )
                     },
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                    contentPadding = PaddingValues(horizontal = GostControlSize.fieldHorizontalPadding, vertical = 0.dp),
                     colors = saasTextFieldColors(),
                 )
             },

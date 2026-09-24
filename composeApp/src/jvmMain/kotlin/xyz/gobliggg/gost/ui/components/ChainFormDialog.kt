@@ -72,7 +72,7 @@ fun ChainFormDialog(
         showSplit = true,
         leftContent = {
             SaaSTableHeader("WIZARD STEPS")
-            Spacer(Modifier.height(Spacing.md))
+            Spacer(Modifier.height(Spacing.sm))
 
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 WizardStep(1, "Basic Configuration", true)
@@ -86,13 +86,13 @@ fun ChainFormDialog(
             Text(
                 "${hops.size} hops, ${hops.sumOf { it.nodes?.size ?: 0 }} nodes",
                 color = sc.textSecondary.copy(alpha = 0.85f),
-                fontSize = 12.sp,
+                style = GostTextStyles.bodyCompact,
             )
         },
     ) {
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             SaaSTableHeader("BASIC IDENTIFIER")
-            Spacer(Modifier.height(Spacing.md))
+            Spacer(Modifier.height(Spacing.sm))
 
             SaaSTextField(
                 label = "Chain Name *",
@@ -105,27 +105,27 @@ fun ChainFormDialog(
 
             Spacer(Modifier.height(Spacing.xl))
             SaaSTableHeader("HOPS CONFIGURATION")
-            Spacer(Modifier.height(Spacing.md))
+            Spacer(Modifier.height(Spacing.sm))
 
             hops.forEachIndexed { hopIdx, hop ->
                 Column(
                     Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(GostRadius.md))
                         .background(sc.surfaceCard)
-                        .border(1.dp, sc.borderSubtle, RoundedCornerShape(12.dp))
-                        .padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                        .border(GostControlSize.borderWidth, sc.borderSubtle, RoundedCornerShape(GostRadius.md))
+                        .padding(Spacing.lg),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.lg),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             "HOP ${hopIdx + 1}",
                             color = sc.statusSuccess,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
+                            style = GostTextStyles.pillLabel.copy(fontWeight = FontWeight.Bold),
                             modifier = Modifier.weight(1f),
                         )
-                        IconButton(
+                        IconTooltipButton(
+                            tooltip = "Remove hop",
                             onClick = {
                                 val newList = hops.toMutableList()
                                 newList.removeAt(hopIdx)
@@ -137,7 +137,7 @@ fun ChainFormDialog(
                                 Icons.Default.Delete,
                                 contentDescription = "Remove Hop",
                                 tint = RedStatus,
-                                modifier = Modifier.size(18.dp),
+                                modifier = Modifier.size(GostControlSize.iconMedium),
                             )
                         }
                     }
@@ -156,23 +156,22 @@ fun ChainFormDialog(
                     Text(
                         "NODES IN THIS HOP",
                         color = sc.textMuted,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = GostTextStyles.microLabel.copy(fontWeight = FontWeight.Bold),
                     )
 
                     hop.nodes?.forEachIndexed { nodeIdx, node ->
                         Column(
                             Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(GostRadius.sm))
                                 .background(sc.surfaceInput)
-                                .border(1.dp, sc.borderSubtle, RoundedCornerShape(8.dp))
-                                .padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                                .border(GostControlSize.borderWidth, sc.borderSubtle, RoundedCornerShape(GostRadius.sm))
+                                .padding(Spacing.lg),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.lg),
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                             ) {
                                 SaaSTextField(
                                     value = node.addr ?: "",
@@ -186,7 +185,8 @@ fun ChainFormDialog(
                                     placeholder = "Endpoint (e.g. 1.2.3.4:1080)",
                                     modifier = Modifier.weight(1f),
                                 )
-                                IconButton(
+                                IconTooltipButton(
+                                    tooltip = "Remove node",
                                     onClick = {
                                         val newHops = hops.toMutableList()
                                         val newNodes = (hop.nodes ?: emptyList()).toMutableList()
@@ -200,20 +200,19 @@ fun ChainFormDialog(
                                         Icons.Default.RemoveCircle,
                                         contentDescription = "Remove Node",
                                         tint = RedStatus,
-                                        modifier = Modifier.size(18.dp),
+                                        modifier = Modifier.size(GostControlSize.iconMedium),
                                     )
                                 }
                             }
 
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                                 Column(Modifier.weight(1f)) {
                                     Text(
                                         "Connector",
                                         color = sc.textMuted,
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.SemiBold,
+                                        style = GostTextStyles.microLabel,
                                     )
-                                    Spacer(Modifier.height(4.dp))
+                                    Spacer(Modifier.height(Spacing.xs))
                                     ChainHopSimpleDropdown(
                                         options = listOf("http", "socks4", "socks5", "relay", "ss", "forward", "sshd", "snid"),
                                         selected = node.connector?.type ?: "http",
@@ -230,10 +229,9 @@ fun ChainFormDialog(
                                     Text(
                                         "Dialer",
                                         color = sc.textMuted,
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.SemiBold,
+                                        style = GostTextStyles.microLabel,
                                     )
-                                    Spacer(Modifier.height(4.dp))
+                                    Spacer(Modifier.height(Spacing.xs))
                                     ChainHopSimpleDropdown(
                                         options =
                                             listOf(
@@ -305,7 +303,7 @@ fun ChainFormDialog(
                 }
             }
 
-            Spacer(Modifier.height(Spacing.md))
+            Spacer(Modifier.height(Spacing.sm))
             SaaSButton(
                 text = "Add Next Hop",
                 onClick = {
@@ -323,9 +321,9 @@ fun ChainFormDialog(
                     text = "Cancel",
                     onClick = onDismiss,
                     type = SaaSButtonType.SECONDARY,
-                    modifier = Modifier.widthIn(max = 160.dp),
+                    modifier = Modifier.widthIn(max = GostControlSize.dialogActionMaxWidth),
                 )
-                Spacer(Modifier.width(Spacing.md))
+                Spacer(Modifier.width(Spacing.sm))
                 SaaSButton(
                     text = "Save Chain",
                     onClick = { onSave(ChainDto(name = name, hops = hops)) },
@@ -335,7 +333,7 @@ fun ChainFormDialog(
                             hops.all { h -> !h.nodes.isNullOrEmpty() && h.nodes!!.all { !it.addr.isNullOrBlank() } },
                     type = SaaSButtonType.ACTION,
                     icon = Icons.Default.Save,
-                    modifier = Modifier.widthIn(max = 160.dp),
+                    modifier = Modifier.widthIn(max = GostControlSize.dialogActionMaxWidth),
                 )
             }
         }
@@ -351,24 +349,23 @@ private fun WizardStep(
     val sc = GostSemantics.colors
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(vertical = 4.dp),
+        modifier = Modifier.padding(vertical = Spacing.xs),
     ) {
         Box(
             Modifier
-                .size(24.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .size(GostControlSize.stepIndicator)
+                .clip(RoundedCornerShape(GostRadius.md))
                 .background(if (isActive) sc.stateSelected else sc.surfaceInput),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 "$num",
                 color = if (isActive) sc.statusSuccess else sc.textDisabled,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
+                style = GostTextStyles.pillLabel.copy(fontWeight = FontWeight.Bold),
             )
         }
-        Spacer(Modifier.width(12.dp))
-        Text(label, color = if (isActive) sc.textPrimary else sc.textSecondary, fontSize = 13.sp)
+        Spacer(Modifier.width(Spacing.lg))
+        Text(label, color = if (isActive) sc.textPrimary else sc.textSecondary, style = GostTextStyles.navItem)
     }
 }
 
@@ -390,16 +387,15 @@ private fun SshDialerAuthBlock(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(GostRadius.sm))
                 .background(sc.surfaceCard)
-                .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(Spacing.lg),
+        verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
         Text(
             "SSH DIALER AUTH",
             color = sc.textMuted,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
+            style = GostTextStyles.microLabel.copy(fontWeight = FontWeight.Bold),
         )
 
         SaaSTextField(
@@ -416,46 +412,38 @@ private fun SshDialerAuthBlock(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(false to "Password", true to "Private Key").forEach { (isKey, label) ->
-                val active = usePublicKey == isKey
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(if (active) sc.stateSelected else sc.surfaceInput)
-                        .border(1.dp, if (active) sc.statusSuccess.copy(alpha = 0.5f) else Color.Transparent, RoundedCornerShape(6.dp))
-                        .clickable {
-                            if (isKey) {
-                                val m = meta.toMutableMap()
-                                if (!m.containsKey("privateKeyFile")) m["privateKeyFile"] = ""
-                                onUpdate(node.copy(dialer = dial.copy(auth = auth.copy(password = null), metadata = m), auth = null))
-                            } else {
-                                val m = meta.filterKeys { it != "privateKeyFile" && it != "passphrase" }.toMutableMap()
-                                onUpdate(
-                                    node.copy(
-                                        dialer =
-                                            dial.copy(
-                                                auth = auth.copy(password = auth.password),
-                                                metadata = m.takeIf { it.isNotEmpty() },
-                                            ),
-                                        auth = null,
-                                    ),
-                                )
-                            }
-                            focusManager.clearFocus()
-                        }.padding(vertical = 8.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        label,
-                        color = if (active) sc.statusSuccess else sc.textSecondary,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
+        SegmentedControl(
+            options = listOf(false, true),
+            selected = usePublicKey,
+            onSelect = { isKey ->
+                if (isKey) {
+                    val m = meta.toMutableMap()
+                    if (!m.containsKey("privateKeyFile")) m["privateKeyFile"] = ""
+                    onUpdate(
+                        node.copy(
+                            dialer = dial.copy(auth = auth.copy(password = null), metadata = m),
+                            auth = null,
+                        ),
+                    )
+                } else {
+                    val m = meta.filterKeys { it != "privateKeyFile" && it != "passphrase" }.toMutableMap()
+                    onUpdate(
+                        node.copy(
+                            dialer =
+                                dial.copy(
+                                    auth = auth.copy(password = auth.password),
+                                    metadata = m.takeIf { it.isNotEmpty() },
+                                ),
+                            auth = null,
+                        ),
                     )
                 }
-            }
-        }
+                focusManager.clearFocus()
+            },
+            label = { if (it) "Private Key" else "Password" },
+            modifier = Modifier.fillMaxWidth(),
+            equalWidth = true,
+        )
 
         if (!usePublicKey) {
             SaaSTextField(
@@ -516,43 +504,12 @@ private fun ChainHopSimpleDropdown(
     selected: String,
     onSelect: (String) -> Unit,
 ) {
-    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
-    val sc = GostSemantics.colors
-    SearchableStringDropdown(
-        selected = selected,
+    DropdownField(
+        value = selected,
         options = options,
         onSelect = onSelect,
         modifier = Modifier.fillMaxWidth(),
-        menuWidthMin = 200,
-        menuMaxHeight = 240,
-        searchPlaceholder = "Search types…",
-    ) { onOpen ->
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(sc.surfaceInput)
-                    .border(1.dp, sc.borderSubtle, RoundedCornerShape(8.dp))
-                    .clickable {
-                        onOpen()
-                        focusManager.clearFocus()
-                    }.padding(horizontal = 12.dp, vertical = 10.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    selected,
-                    color = sc.textPrimary,
-                    fontSize = 12.sp,
-                    modifier = Modifier.weight(1f),
-                )
-                Icon(
-                    Icons.Default.ArrowDropDown,
-                    contentDescription = null,
-                    tint = sc.textSecondary,
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-        }
-    }
+        searchable = options.size >= 10,
+        contentDescription = "Select chain type",
+    )
 }

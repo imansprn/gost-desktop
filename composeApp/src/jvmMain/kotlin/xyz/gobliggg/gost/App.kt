@@ -25,6 +25,8 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import xyz.gobliggg.gost.data.AppState
+import xyz.gobliggg.gost.data.ServiceRegistry
+import xyz.gobliggg.gost.data.ServiceStatus
 import xyz.gobliggg.gost.navigation.newAutherEditorRoute
 import xyz.gobliggg.gost.navigation.newServiceWizardRoute
 import xyz.gobliggg.gost.navigation.sidebarSelectedRoute
@@ -40,8 +42,10 @@ import xyz.gobliggg.gost.screen.serviceform.ServiceFormScreen
 import xyz.gobliggg.gost.screen.services.ServicesScreen
 import xyz.gobliggg.gost.screen.settings.SettingsScreen
 import xyz.gobliggg.gost.ui.GlobalWindowShortcuts
+import xyz.gobliggg.gost.ui.UnsavedChangesGuard
 import xyz.gobliggg.gost.ui.WindowTitleState
 import xyz.gobliggg.gost.ui.components.AppShell
+import xyz.gobliggg.gost.ui.components.ConfirmDialog
 import xyz.gobliggg.gost.ui.theme.GostTheme
 
 @Composable
@@ -81,6 +85,13 @@ fun App() {
 private fun MainAppContent() {
     val initialRoute = remember { AppState.takePendingShellRoute() ?: "dashboard" }
     var stack by remember { mutableStateOf(listOf(initialRoute)) }
+    var stopEngineConfirmOpen by remember { mutableStateOf(false) }
+    var unsavedConfirmOpen by remember { mutableStateOf(false) }
+    var pendingNavigation by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val hasUnsavedChanges by UnsavedChangesGuard.isDirty.collectAsState()
+    val engineRunning by AppState.isEngineRunning.collectAsState()
+    val services by ServiceRegistry.default().services.collectAsState()
+    val runningTunnelCount = services.count { it.status == ServiceStatus.RUNNING }
     val topRoute = stack.last()
     val sidebarRoute = sidebarSelectedRoute(stack)
 
@@ -90,6 +101,20 @@ private fun MainAppContent() {
 
     val popEditorOrAuthers: () -> Unit = {
         stack = if (stack.size > 1) stack.dropLast(1) else listOf("authers")
+    }
+
+    fun requestNavigation(action: () -> Unit) {
+        if (hasUnsavedChanges) {
+            pendingNavigation = action
+            unsavedConfirmOpen = true
+        } else {
+            action()
+        }
+    }
+
+    fun completeNavigation(action: () -> Unit) {
+        UnsavedChangesGuard.clear()
+        action()
     }
 
     Box(
@@ -120,13 +145,13 @@ private fun MainAppContent() {
                                 }
                             }
                             Key.Comma -> {
-                                stack = listOf("settings")
+                                requestNavigation { stack = listOf("settings") }
                                 true
                             }
                             else -> false
                         }
                     } else if (event.key == Key.Escape && stack.size > 1) {
-                        stack = stack.dropLast(1)
+                        requestNavigation { stack = stack.dropLast(1) }
                         true
                     } else {
                         false
@@ -135,8 +160,14 @@ private fun MainAppContent() {
     ) {
         AppShell(
             currentRoute = sidebarRoute,
-            onNavigate = { route -> stack = listOf(route) },
-            onDisconnect = { AppState.disconnect() },
+            onNavigate = { route -> requestNavigation { stack = listOf(route) } },
+            onDisconnect = {
+                if (engineRunning && runningTunnelCount > 0) {
+                    stopEngineConfirmOpen = true
+                } else {
+                    AppState.toggleEngine()
+                }
+            },
         ) {
             when {
                 topRoute == "dashboard" ->
@@ -155,14 +186,16 @@ private fun MainAppContent() {
                         ServiceFormScreen(
                             routeId = topRoute,
                             editName = null,
-                            onDone = popWizardOrService,
-                            onCancel = popWizardOrService,
+                            onDone = { completeNavigation(popWizardOrService) },
+                            onCancel = { requestNavigation(popWizardOrService) },
                         ).Content()
                     }
 
                 topRoute == "chains" ->
                     ChainsScreen(
-                        onEditService = { svc -> stack = listOf("services", "service-edit:$svc") },
+                        onEditService = { svc ->
+                            requestNavigation { stack = listOf("services", "service-edit:$svc") }
+                        },
                     ).Content()
 
                 topRoute == "authers" ->
@@ -180,8 +213,8 @@ private fun MainAppContent() {
                         AutherFormScreen(
                             routeId = topRoute,
                             editName = null,
-                            onDone = popEditorOrAuthers,
-                            onCancel = popEditorOrAuthers,
+                            onDone = { completeNavigation(popEditorOrAuthers) },
+                            onCancel = { requestNavigation(popEditorOrAuthers) },
                         ).Content()
                     }
 
@@ -191,8 +224,8 @@ private fun MainAppContent() {
                         ServiceFormScreen(
                             routeId = topRoute,
                             editName = name,
-                            onDone = popWizardOrService,
-                            onCancel = popWizardOrService,
+                            onDone = { completeNavigation(popWizardOrService) },
+                            onCancel = { requestNavigation(popWizardOrService) },
                         ).Content()
                     }
                 }
@@ -203,8 +236,8 @@ private fun MainAppContent() {
                         AutherFormScreen(
                             routeId = topRoute,
                             editName = name,
-                            onDone = popEditorOrAuthers,
-                            onCancel = popEditorOrAuthers,
+                            onDone = { completeNavigation(popEditorOrAuthers) },
+                            onCancel = { requestNavigation(popEditorOrAuthers) },
                         ).Content()
                     }
                 }
@@ -214,6 +247,42 @@ private fun MainAppContent() {
                         onCreateService = { stack = listOf("dashboard", newServiceWizardRoute()) },
                     ).Content()
             }
+        }
+
+        if (unsavedConfirmOpen) {
+            ConfirmDialog(
+                title = "Discard unsaved changes?",
+                message = "Your current edits have not been saved. Discard them and continue?",
+                onConfirm = {
+                    val action = pendingNavigation
+                    pendingNavigation = null
+                    unsavedConfirmOpen = false
+                    UnsavedChangesGuard.clear()
+                    action?.invoke()
+                },
+                onDismiss = {
+                    pendingNavigation = null
+                    unsavedConfirmOpen = false
+                },
+            )
+        }
+
+        if (stopEngineConfirmOpen) {
+            ConfirmDialog(
+                title = "Stop Engine",
+                message =
+                    "$runningTunnelCount running tunnel" +
+                        if (runningTunnelCount == 1) {
+                            " will be interrupted. Continue?"
+                        } else {
+                            "s will be interrupted. Continue?"
+                        },
+                onConfirm = {
+                    stopEngineConfirmOpen = false
+                    AppState.stopEngine()
+                },
+                onDismiss = { stopEngineConfirmOpen = false },
+            )
         }
     }
 }

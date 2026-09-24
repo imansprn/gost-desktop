@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import xyz.gobliggg.gost.ui.theme.GostControlSize
 import xyz.gobliggg.gost.ui.theme.GostRadius
 import xyz.gobliggg.gost.ui.theme.GostSemantics
 import xyz.gobliggg.gost.ui.theme.Spacing
@@ -51,8 +52,8 @@ fun Banner(
             modifier
                 .fillMaxWidth()
                 .background(container, RoundedCornerShape(GostRadius.sm))
-                .border(1.dp, foreground.copy(alpha = 0.25f), RoundedCornerShape(GostRadius.sm))
-                .padding(horizontal = Spacing.lg, vertical = Spacing.md),
+                .border(GostControlSize.borderWidth, foreground.copy(alpha = 0.25f), RoundedCornerShape(GostRadius.sm))
+                .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -62,7 +63,7 @@ fun Banner(
                 imageVector = icon,
                 contentDescription = type.name,
                 tint = foreground,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(GostControlSize.icon),
             )
             Spacer(Modifier.width(Spacing.sm))
             Text(

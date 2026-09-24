@@ -27,6 +27,12 @@ import xyz.gobliggg.gost.ui.theme.*
 import xyz.gobliggg.gost.ui.theme.Spacing
 import javax.swing.JFileChooser
 
+private object ConnectionLayoutDimensions {
+    val topPadding = 64.dp
+    val footerGap = 80.dp
+    val logo = GostControlSize.largeHeight
+}
+
 class ConnectionScreen(
     private val onConnected: () -> Unit,
 ) : Screen {
@@ -53,7 +59,7 @@ class ConnectionScreen(
                             start = Spacing.xxl,
                             end = Spacing.xxl,
                             bottom = Spacing.xxl,
-                            top = 64.dp
+                            top = ConnectionLayoutDimensions.topPadding
                         ),
             ) {
                 Column(
@@ -71,12 +77,16 @@ class ConnectionScreen(
                             Box(
                                 modifier =
                                     Modifier
-                                        .size(48.dp)
+                                        .size(ConnectionLayoutDimensions.logo)
                                         .clip(CircleShape)
                                         .background(SaASAction),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Text("G", color = sc.focusRing, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                                Text(
+                                    "G",
+                                    color = sc.focusRing,
+                                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                                )
                             }
                         },
                     )
@@ -91,7 +101,7 @@ class ConnectionScreen(
                         helperText = state.pathError,
                         modifier = Modifier.fillMaxWidth(),
                         trailingIcon = {
-                            IconButton(
+                            SaaSIconButton(
                                 onClick = {
                                     val chooser = JFileChooser()
                                     chooser.dialogTitle = "Select GOST binary"
@@ -105,7 +115,7 @@ class ConnectionScreen(
                                     Icons.Default.FolderOpen,
                                     contentDescription = "Browse for GOST binary",
                                     tint = sc.textMuted,
-                                    modifier = Modifier.size(20.dp),
+                                    modifier = Modifier.size(GostControlSize.iconLarge),
                                 )
                             }
                         },
@@ -121,7 +131,7 @@ class ConnectionScreen(
                         placeholder = "~/.gost-desktop",
                         modifier = Modifier.fillMaxWidth(),
                         trailingIcon = {
-                            IconButton(
+                            SaaSIconButton(
                                 onClick = {
                                     val chooser = JFileChooser()
                                     chooser.dialogTitle = "Select working directory"
@@ -135,7 +145,7 @@ class ConnectionScreen(
                                     Icons.Default.FolderOpen,
                                     contentDescription = "Browse for working directory",
                                     tint = sc.textMuted,
-                                    modifier = Modifier.size(20.dp),
+                                    modifier = Modifier.size(GostControlSize.iconLarge),
                                 )
                             }
                         },
@@ -164,14 +174,15 @@ class ConnectionScreen(
                 }
 
                 // Big gap before the button
-                Spacer(Modifier.height(80.dp))
+                Spacer(Modifier.height(ConnectionLayoutDimensions.footerGap))
 
                 SaaSButton(
                     text = "Save & Continue",
                     onClick = { model.saveAndConnect(onConnected) },
                     enabled = canConnect,
                     type = SaaSButtonType.PRIMARY,
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    size = SaaSButtonSize.Large,
                 )
             }
         }

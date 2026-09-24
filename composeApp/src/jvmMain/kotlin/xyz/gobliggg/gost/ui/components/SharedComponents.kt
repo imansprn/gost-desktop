@@ -3,6 +3,7 @@ package xyz.gobliggg.gost.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -44,14 +45,13 @@ fun StatCard(
             modifier
                 .clip(RoundedCornerShape(GostRadius.lg))
                 .background(sc.surfaceCard)
-                .border(1.dp, sc.borderSubtle, RoundedCornerShape(GostRadius.lg))
+                .border(GostControlSize.borderWidth, sc.borderSubtle, RoundedCornerShape(GostRadius.lg))
                 .padding(Spacing.statCardInner),
     ) {
         Text(
             text = label,
             color = sc.textSecondary,
-            style = MaterialTheme.typography.labelMedium,
-            letterSpacing = 0.5.sp,
+            style = GostTextStyles.statLabel,
         )
         Spacer(Modifier.height(Spacing.sm))
         Text(
@@ -70,6 +70,60 @@ fun StatCard(
     }
 }
 
+@Composable
+fun SaaSIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    size: androidx.compose.ui.unit.Dp = GostControlSize.iconButtonCompact,
+    content: @Composable () -> Unit,
+) {
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+    IconButton(
+        onClick = {
+            onClick()
+            focusManager.clearFocus()
+        },
+        modifier = modifier.size(size),
+        enabled = enabled,
+    ) {
+        content()
+    }
+}
+
+@Composable
+fun SaaSCompactSwitch(
+    checked: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val sc = GostSemantics.colors
+    Box(
+        modifier =
+            modifier
+                .size(
+                    width = GostControlSize.compactSwitchWidth,
+                    height = GostControlSize.compactSwitchHeight,
+                )
+                .clip(CircleShape)
+                .background(
+                    if (checked) {
+                        sc.statusSuccess.copy(alpha = 0.2f)
+                    } else {
+                        sc.borderStrong.copy(alpha = 0.25f)
+                    },
+                ).padding(horizontal = 2.dp),
+        contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart,
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .size(GostControlSize.compactSwitchThumb)
+                    .clip(CircleShape)
+                    .background(if (checked) sc.statusSuccess else sc.textMuted),
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IconTooltipButton(
@@ -79,23 +133,18 @@ fun IconTooltipButton(
     enabled: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     val tooltipState = rememberTooltipState()
     TooltipBox(
         positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
         tooltip = { PlainTooltip { Text(tooltip) } },
         state = tooltipState,
     ) {
-        IconButton(
-            onClick = {
-                onClick()
-                focusManager.clearFocus()
-            },
+        SaaSIconButton(
+            onClick = onClick,
             modifier = modifier,
             enabled = enabled,
-        ) {
-            content()
-        }
+            content = content,
+        )
     }
 }
 
@@ -128,8 +177,8 @@ fun ServiceStatusPill(
             modifier
                 .clip(RoundedCornerShape(GostRadius.md))
                 .background(bg)
-                .border(1.dp, fg.copy(alpha = 0.3f), RoundedCornerShape(GostRadius.md))
-                .padding(horizontal = Spacing.md, vertical = Spacing.xs),
+                .border(GostControlSize.borderWidth, fg.copy(alpha = 0.3f), RoundedCornerShape(GostRadius.md))
+                .padding(horizontal = Spacing.sm, vertical = Spacing.xs),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
@@ -137,7 +186,7 @@ fun ServiceStatusPill(
             imageVector = icon,
             contentDescription = label,
             tint = fg,
-            modifier = Modifier.size(14.dp),
+            modifier = Modifier.size(GostControlSize.iconSmall),
         )
         Text(
             text = label,
@@ -170,7 +219,7 @@ fun EmptyState(
         Icon(
             imageVector = icon,
             contentDescription = "Empty state",
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier.size(GostControlSize.emptyStateIcon),
             tint = MaterialTheme.colorScheme.outline,
         )
         Spacer(Modifier.height(Spacing.lg))
@@ -215,21 +264,21 @@ fun ConfirmDialog(
         onDismissRequest = onDismiss,
         size = SaaSDialogSize.Sm,
     ) {
-        Text(message, color = sc.textSecondary, fontSize = 13.sp)
+        Text(message, color = sc.textSecondary, style = GostTextStyles.navItem)
         Spacer(Modifier.height(Spacing.dialogPadding))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             SaaSButton(
                 text = "Cancel",
                 onClick = onDismiss,
                 type = SaaSButtonType.SECONDARY,
-                modifier = Modifier.widthIn(max = 160.dp),
+                modifier = Modifier.widthIn(max = GostControlSize.dialogActionMaxWidth),
             )
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(Spacing.lg))
             SaaSButton(
                 text = confirmLabel,
                 onClick = onConfirm,
                 type = SaaSButtonType.ACTION,
-                modifier = Modifier.widthIn(max = 160.dp),
+                modifier = Modifier.widthIn(max = GostControlSize.dialogActionMaxWidth),
             )
         }
     }
@@ -265,9 +314,9 @@ fun ToastMessage(
     Box(
         modifier =
             modifier
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(GostRadius.sm))
                 .background(bgColor)
-                .padding(horizontal = Spacing.lg, vertical = Spacing.md),
+                .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
     ) {
         Text(
             text = toast.message,
@@ -285,17 +334,17 @@ fun ErrorMessage(message: String) {
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(GostRadius.sm))
                 .background(MaterialTheme.colorScheme.errorContainer)
-                .border(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.2f), RoundedCornerShape(GostRadius.sm))
-                .padding(Spacing.md),
+                .border(GostControlSize.borderWidth, MaterialTheme.colorScheme.error.copy(alpha = 0.2f), RoundedCornerShape(GostRadius.sm))
+                .padding(Spacing.sm),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 Icons.Default.ErrorOutline,
                 contentDescription = "Error",
                 tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(GostControlSize.icon),
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(Spacing.sm))
             Text(
                 message,
                 color = MaterialTheme.colorScheme.onErrorContainer,

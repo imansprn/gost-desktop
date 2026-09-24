@@ -31,6 +31,17 @@ import cafe.adriel.voyager.core.screen.Screen
 import xyz.gobliggg.gost.ui.components.*
 import xyz.gobliggg.gost.ui.theme.*
 
+private object DashboardDimensions {
+    val heroGraphic = 120.dp
+    val serverWidth = 56.dp
+    val serverHeight = 24.dp
+    val serverBorder = 3.dp
+    val serverLed = 4.dp
+    val metadataSeparator = 3.dp
+    val statusDot = 6.dp
+    val heroButtonWidth = 220.dp
+}
+
 class DashboardScreen(
     private val onCreateService: () -> Unit = {},
 ) : Screen {
@@ -58,10 +69,14 @@ class DashboardScreen(
                     Box(
                         modifier =
                             Modifier
-                                .size(120.dp)
-                                .clip(RoundedCornerShape(Spacing.xxl))
+                                .size(DashboardDimensions.heroGraphic)
+                                .clip(RoundedCornerShape(GostRadius.xl))
                                 .background(sc.surfacePanel.copy(alpha = 0.5f))
-                                .border(1.dp, sc.borderSubtle, RoundedCornerShape(Spacing.xxl)),
+                                .border(
+                                    GostControlSize.borderWidth,
+                                    sc.borderSubtle,
+                                    RoundedCornerShape(GostRadius.xl),
+                                ),
                         contentAlignment = Alignment.Center,
                     ) {
                         Column(
@@ -71,15 +86,15 @@ class DashboardScreen(
                             Box(
                                 modifier =
                                     Modifier
-                                        .size(width = 56.dp, height = 24.dp)
-                                        .border(3.dp, sc.textPrimary, RoundedCornerShape(GostRadius.sm))
+                                        .size(width = DashboardDimensions.serverWidth, height = DashboardDimensions.serverHeight)
+                                        .border(DashboardDimensions.serverBorder, sc.textPrimary, RoundedCornerShape(GostRadius.sm))
                                         .padding(start = Spacing.sm),
                                 contentAlignment = Alignment.CenterStart,
                             ) {
                                 Box(
                                     modifier =
                                         Modifier
-                                            .size(4.dp)
+                                            .size(DashboardDimensions.serverLed)
                                             .clip(CircleShape)
                                             .background(sc.textPrimary),
                                 )
@@ -87,15 +102,15 @@ class DashboardScreen(
                             Box(
                                 modifier =
                                     Modifier
-                                        .size(width = 56.dp, height = 24.dp)
-                                        .border(3.dp, sc.textPrimary, RoundedCornerShape(GostRadius.sm))
+                                        .size(width = DashboardDimensions.serverWidth, height = DashboardDimensions.serverHeight)
+                                        .border(DashboardDimensions.serverBorder, sc.textPrimary, RoundedCornerShape(GostRadius.sm))
                                         .padding(start = Spacing.sm),
                                 contentAlignment = Alignment.CenterStart,
                             ) {
                                 Box(
                                     modifier =
                                         Modifier
-                                            .size(4.dp)
+                                            .size(DashboardDimensions.serverLed)
                                             .clip(CircleShape)
                                             .background(sc.textPrimary),
                                 )
@@ -133,21 +148,25 @@ class DashboardScreen(
                             Modifier
                                 .clip(RoundedCornerShape(GostRadius.pill))
                                 .background(sc.surfaceApp)
-                                .border(1.dp, sc.borderSubtle, RoundedCornerShape(GostRadius.pill))
+                                .border(GostControlSize.borderWidth, sc.borderSubtle, RoundedCornerShape(GostRadius.pill))
                                 .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
                     ) {
-                        Text("Core: 127.0.0.1", color = sc.textMuted, fontSize = 11.sp)
+                        Text("Core: 127.0.0.1", color = sc.textMuted, style = GostTextStyles.pillLabel)
                         Spacer(Modifier.width(Spacing.lg))
-                        Box(Modifier.size(3.dp).clip(CircleShape).background(sc.textDisabled))
+                        Box(Modifier.size(DashboardDimensions.metadataSeparator).clip(CircleShape).background(sc.textDisabled))
                         Spacer(Modifier.width(Spacing.lg))
-                        Text("Active tunnels: 4", color = sc.textMuted, fontSize = 11.sp)
+                        Text("Active tunnels: 4", color = sc.textMuted, style = GostTextStyles.pillLabel)
                         Spacer(Modifier.width(Spacing.lg))
-                        Box(Modifier.size(3.dp).clip(CircleShape).background(sc.textDisabled))
+                        Box(Modifier.size(DashboardDimensions.metadataSeparator).clip(CircleShape).background(sc.textDisabled))
                         Spacer(Modifier.width(Spacing.lg))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(Modifier.size(6.dp).clip(CircleShape).background(sc.statusSuccess))
+                            Box(Modifier.size(DashboardDimensions.statusDot).clip(CircleShape).background(sc.statusSuccess))
                             Spacer(Modifier.width(Spacing.sm))
-                            Text("Wrapped", color = sc.statusSuccess, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                "Wrapped",
+                                color = sc.statusSuccess,
+                                style = GostTextStyles.pillLabel.copy(fontWeight = FontWeight.Bold),
+                            )
                         }
                     }
 
@@ -157,7 +176,7 @@ class DashboardScreen(
                     SaaSButton(
                         text = "Open Tunnel Console",
                         onClick = onCreateService,
-                        modifier = Modifier.width(220.dp),
+                        modifier = Modifier.width(DashboardDimensions.heroButtonWidth),
                         type = SaaSButtonType.PRIMARY,
                     )
                 }

@@ -20,7 +20,11 @@ import cafe.adriel.voyager.core.screen.Screen
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import xyz.gobliggg.gost.api.dto.*
+import xyz.gobliggg.gost.data.AppState
 import xyz.gobliggg.gost.data.ConfigBuilder
+import xyz.gobliggg.gost.data.TemplateRuntimeSynchronizer
+import xyz.gobliggg.gost.data.TemplateTypes
+import xyz.gobliggg.gost.ui.ShellFeedback
 import xyz.gobliggg.gost.ui.components.*
 import xyz.gobliggg.gost.ui.theme.*
 
@@ -37,17 +41,19 @@ class AdvancedScreen : Screen {
         val templateType =
             remember(activeTab) {
                 when (activeTab) {
-                    AdvancedTab.BYPASS -> "bypasses"
-                    AdvancedTab.ADMISSION -> "admissions"
-                    AdvancedTab.RESOLVERS -> "resolvers"
-                    AdvancedTab.HOSTS -> "hosts"
+                    AdvancedTab.BYPASS -> TemplateTypes.BYPASSES
+                    AdvancedTab.ADMISSION -> TemplateTypes.ADMISSIONS
+                    AdvancedTab.RESOLVERS -> TemplateTypes.RESOLVERS
+                    AdvancedTab.HOSTS -> TemplateTypes.HOSTS
                 }
             }
 
         var templates by remember { mutableStateOf(ConfigBuilder.default().listTemplates(templateType)) }
         var showDialog by remember { mutableStateOf(false) }
         var editingObject by remember { mutableStateOf<Any?>(null) }
+        var editingName by remember { mutableStateOf<String?>(null) }
         var deleteTarget by remember { mutableStateOf<String?>(null) }
+        val settings by AppState.settings.collectAsState()
 
         val json =
             remember {
@@ -59,6 +65,24 @@ class AdvancedScreen : Screen {
 
         fun reload() {
             templates = ConfigBuilder.default().listTemplates(templateType)
+        }
+
+        fun removeObject(name: String) {
+            val builder = ConfigBuilder.default()
+            val dependents = builder.findDependentServices(templateType, name)
+            if (dependents.isNotEmpty()) {
+                ShellFeedback.showSnackbar(
+                    "Cannot delete '$name'; used by: " + dependents.joinToString(),
+                )
+                return
+            }
+            try {
+                builder.deleteTemplate(templateType, name)
+                reload()
+                ShellFeedback.showSnackbar("Configuration object deleted")
+            } catch (e: Exception) {
+                ShellFeedback.showSnackbar(e.message ?: "Failed to delete configuration object")
+            }
         }
 
         LaunchedEffect(activeTab) {
@@ -129,10 +153,22 @@ class AdvancedScreen : Screen {
                                     content = content,
                                     json = json,
                                     onEdit = {
-                                        editingObject = parseObject(activeTab, content, json, name)
-                                        showDialog = true
+                                        val parsed = parseObject(activeTab, content, json, name)
+                                        if (parsed == null) {
+                                            ShellFeedback.showSnackbar("Unable to parse '$name'. Repair its JSON before editing.")
+                                        } else {
+                                            editingName = name
+                                            editingObject = parsed
+                                            showDialog = true
+                                        }
                                     },
-                                    onDelete = { deleteTarget = name },
+                                    onDelete = {
+                                        if (settings.confirmDeletes) {
+                                            deleteTarget = name
+                                        } else {
+                                            removeObject(name)
+                                        }
+                                    },
                                 )
                             }
                         }
@@ -149,6 +185,7 @@ class AdvancedScreen : Screen {
                 }
             FloatingActionButton(
                 onClick = {
+                    editingName = null
                     editingObject = null
                     showDialog = true
                 },
@@ -178,20 +215,55 @@ class AdvancedScreen : Screen {
                             else -> null
                         }
                     if (!name.isNullOrBlank()) {
-                        val stringContent =
-                            when (obj) {
-                                is BypassDto -> json.encodeToString(obj)
-                                is AdmissionDto -> json.encodeToString(obj)
-                                is ResolverDto -> json.encodeToString(obj)
-                                is HostsDto -> json.encodeToString(obj)
-                                else -> ""
+                        try {
+                            val builder = ConfigBuilder.default()
+                            if (!builder.isValidName(name)) {
+                                throw IllegalArgumentException(
+                                    "Use only letters, numbers, underscore, and hyphen.",
+                                )
                             }
-                        ConfigBuilder.default().saveTemplate(templateType, name, stringContent)
-                        reload()
-                        showDialog = false
+                            if (builder.templateExists(templateType, name) && editingName != name) {
+                                throw IllegalArgumentException("An object named '$name' already exists.")
+                            }
+                            if (editingName != null && editingName != name) {
+                                val dependents = builder.findDependentServices(templateType, editingName!!)
+                                if (dependents.isNotEmpty()) {
+                                    throw IllegalStateException(
+                                        "Cannot rename while used by: " + dependents.joinToString(),
+                                    )
+                                }
+                            }
+
+                            val stringContent =
+                                when (obj) {
+                                    is BypassDto -> json.encodeToString(obj)
+                                    is AdmissionDto -> json.encodeToString(obj)
+                                    is ResolverDto -> json.encodeToString(obj)
+                                    is HostsDto -> json.encodeToString(obj)
+                                    else -> ""
+                                }
+
+                            builder.saveTemplate(templateType, name, stringContent)
+                            if (editingName != null && editingName != name) {
+                                builder.deleteTemplate(templateType, editingName!!)
+                            }
+                            TemplateRuntimeSynchronizer
+                                .synchronize(templateType, name)
+                                .getOrThrow()
+                            editingName = name
+                            reload()
+                            showDialog = false
+                            ShellFeedback.showSnackbar("Configuration object saved")
+                        } catch (e: Exception) {
+                            ShellFeedback.showSnackbar(e.message ?: "Failed to save configuration object")
+                        }
                     }
                 },
-                onDismiss = { showDialog = false },
+                onDismiss = {
+                    showDialog = false
+                    editingName = null
+                    editingObject = null
+                },
             )
         }
 
@@ -200,10 +272,9 @@ class AdvancedScreen : Screen {
                 title = "Delete Object",
                 message = "Remove \"$deleteTarget\" from ${activeTab.name.lowercase()}?",
                 onConfirm = {
-                    val dir = java.io.File(System.getProperty("user.home"), ".gost-manager/templates/$templateType")
-                    java.io.File(dir, "$deleteTarget.json").delete()
+                    val target = deleteTarget!!
                     deleteTarget = null
-                    reload()
+                    removeObject(target)
                 },
                 onDismiss = { deleteTarget = null },
             )
@@ -242,11 +313,15 @@ class AdvancedScreen : Screen {
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(GostRadius.md))
                     .background(SaASSlate.copy(0.4f))
-                    .border(1.dp, Color.White.copy(0.05f), RoundedCornerShape(12.dp))
+                    .border(
+                        GostControlSize.borderWidth,
+                        Color.White.copy(0.05f),
+                        RoundedCornerShape(GostRadius.md),
+                    )
                     .clickable { onEdit() }
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                    .padding(horizontal = Spacing.xl, vertical = Spacing.lg),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -258,13 +333,13 @@ class AdvancedScreen : Screen {
                         AdvancedTab.HOSTS -> Icons.Default.ViewList
                     },
                 contentDescription = "Type: ${activeTab.name.lowercase()}",
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(GostControlSize.iconMedium),
                 tint = Cyan300,
             )
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(Spacing.lg))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(name, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White)
+                Text(name, style = GostTextStyles.rowTitle, color = Color.White)
 
                 // Subtitle info
                 val info =
@@ -296,23 +371,30 @@ class AdvancedScreen : Screen {
                             }
                         }
                     }
-                Text(info, fontSize = 12.sp, color = Color.White.copy(alpha = 0.6f))
+                Text(info, style = GostTextStyles.rowSubtitle, color = Color.White.copy(alpha = 0.6f))
             }
 
             Row {
                 IconTooltipButton(
                     tooltip = "Edit",
                     onClick = onEdit,
-                    modifier = Modifier.size(32.dp),
                 ) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.size(16.dp))
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Edit",
+                        modifier = Modifier.size(GostControlSize.icon),
+                    )
                 }
                 IconTooltipButton(
                     tooltip = "Delete",
                     onClick = onDelete,
-                    modifier = Modifier.size(32.dp),
                 ) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = RedStatus, modifier = Modifier.size(16.dp))
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = RedStatus,
+                        modifier = Modifier.size(GostControlSize.icon),
+                    )
                 }
             }
         }

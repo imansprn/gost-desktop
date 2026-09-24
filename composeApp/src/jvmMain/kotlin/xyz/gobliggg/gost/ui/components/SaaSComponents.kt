@@ -138,7 +138,7 @@ fun SaaSListContainer(
             modifier
                 .clip(RoundedCornerShape(GostRadius.lg))
                 .background(sc.surfacePanel)
-                .border(1.dp, sc.borderSubtle, RoundedCornerShape(GostRadius.lg)),
+                .border(GostControlSize.borderWidth, sc.borderSubtle, RoundedCornerShape(GostRadius.lg)),
     ) {
         content()
     }
@@ -198,7 +198,7 @@ fun SaaSTextField(
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 40.dp),
+            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = GostControlSize.standardHeight),
             enabled = enabled,
             singleLine = singleLine,
             visualTransformation = visualTransformation,
@@ -231,17 +231,17 @@ fun SaaSTextField(
                             unfocusedBorderThickness = 1.dp,
                         )
                     },
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                    contentPadding = PaddingValues(horizontal = GostControlSize.fieldHorizontalPadding, vertical = 0.dp),
                     colors = saasTextFieldColors(),
                 )
             },
         )
 
-        if (helperText != null && !isError) {
+        if (helperText != null) {
             Spacer(Modifier.height(Spacing.xs))
             Text(
                 text = helperText,
-                color = DarkTextDim,
+                color = if (isError) sc.statusError else DarkTextDim,
                 style = GostTextStyles.tableHeader,
             )
         }
@@ -277,12 +277,26 @@ fun SaaSSearchBar(
         modifier = modifier,
         placeholder = placeholder,
         trailingIcon = {
-            Icon(
-                imageVector = Icons.Default.Search,
-                contentDescription = null,
-                tint = DarkTextSlate,
-                modifier = Modifier.size(18.dp),
-            )
+            if (query.isBlank()) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = null,
+                    tint = DarkTextSlate,
+                    modifier = Modifier.size(GostControlSize.iconMedium),
+                )
+            } else {
+                IconButton(
+                    onClick = { onQueryChange("") },
+                    modifier = Modifier.size(GostControlSize.iconButtonCompact),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Clear search",
+                        tint = DarkTextSlate,
+                        modifier = Modifier.size(GostControlSize.icon),
+                    )
+                }
+            }
         },
     )
 }
@@ -291,6 +305,11 @@ enum class SaaSButtonType {
     PRIMARY, // Gradient Cyan
     SECONDARY, // Slate Grey
     ACTION, // Dark Teal + Green Text
+}
+
+enum class SaaSButtonSize {
+    Standard,
+    Large,
 }
 
 @Composable
@@ -302,6 +321,7 @@ fun SaaSButton(
     enabled: Boolean = true,
     loading: Boolean = false,
     icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    size: SaaSButtonSize = SaaSButtonSize.Standard,
 ) {
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     val sc = GostSemantics.colors
@@ -325,6 +345,11 @@ fun SaaSButton(
         }
 
     val shape = RoundedCornerShape(GostRadius.md)
+    val controlHeight =
+        when (size) {
+            SaaSButtonSize.Standard -> GostControlSize.standardHeight
+            SaaSButtonSize.Large -> GostControlSize.largeHeight
+        }
     val overlayAlpha =
         when {
             isPressed -> 0.10f
@@ -335,15 +360,15 @@ fun SaaSButton(
     val content: @Composable () -> Unit = {
         if (loading) {
             CircularProgressIndicator(
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(GostControlSize.icon),
                 strokeWidth = 2.dp,
                 color = contentColor,
             )
         } else {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (icon != null) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(8.dp))
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(GostControlSize.icon))
+                    Spacer(Modifier.width(Spacing.sm))
                 }
                 Text(
                     text = text,
@@ -361,7 +386,7 @@ fun SaaSButton(
         Box(
             modifier =
                 modifier
-                    .defaultMinSize(minHeight = 40.dp)
+                    .defaultMinSize(minHeight = controlHeight)
                     .clip(shape)
                     .clickable(
                         enabled = enabled && !loading,
@@ -410,7 +435,7 @@ fun SaaSButton(
                 onClick()
                 focusManager.clearFocus()
             },
-            modifier = modifier.defaultMinSize(minHeight = 40.dp),
+            modifier = modifier.defaultMinSize(minHeight = controlHeight),
             enabled = enabled && !loading,
             shape = shape,
             interactionSource = interactionSource,
@@ -464,7 +489,7 @@ fun SaaSDialog(
                     .wrapContentHeight()
                     .clip(RoundedCornerShape(GostRadius.lg))
                     .background(sc.surfaceApp)
-                    .border(1.dp, sc.borderSubtle, RoundedCornerShape(GostRadius.lg)),
+                    .border(GostControlSize.borderWidth, sc.borderSubtle, RoundedCornerShape(GostRadius.lg)),
         ) {
             Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
                 // Optional Side Panel (Left)
@@ -472,7 +497,7 @@ fun SaaSDialog(
                     Column(
                         modifier =
                             Modifier
-                                .width(300.dp)
+                                .width(GostLayoutSize.dialogSplitPane)
                                 .fillMaxHeight()
                                 .background(sc.surfacePanel)
                                 .padding(Spacing.dialogPadding),
@@ -503,13 +528,17 @@ fun SaaSDialog(
             // Close Button (Top Right)
             IconButton(
                 onClick = onDismissRequest,
-                modifier = Modifier.align(Alignment.TopEnd).padding(Spacing.sm),
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(Spacing.sm)
+                        .size(GostControlSize.iconButtonDefault),
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Close",
                     tint = sc.textSecondary.copy(alpha = 0.7f),
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(GostControlSize.iconLarge),
                 )
             }
         }
@@ -529,23 +558,11 @@ fun <T> SaaSToggleGroup(
     labelModifier: (T) -> String = { it.toString() },
     modifier: Modifier = Modifier,
 ) {
-    val sc = GostSemantics.colors
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        options.forEach { option ->
-            val isActive = selectedOption == option
-            Box(
-                Modifier
-                    .clip(RoundedCornerShape(GostRadius.sm))
-                    .background(if (isActive) sc.stateSelected else sc.surfaceInput)
-                    .clickable { onOptionSelected(option) }
-                    .padding(horizontal = Spacing.md, vertical = Spacing.sm),
-            ) {
-                Text(
-                    text = labelModifier(option),
-                    color = if (isActive) sc.focusRing else sc.textSecondary,
-                    style = GostTextStyles.buttonLabel.copy(fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal),
-                )
-            }
-        }
-    }
+    SegmentedControl(
+        options = options,
+        selected = selectedOption,
+        onSelect = onOptionSelected,
+        label = labelModifier,
+        modifier = modifier,
+    )
 }

@@ -41,6 +41,7 @@ fun AppShell(
     content: @Composable () -> Unit,
 ) {
     val isRuntimeValid by AppState.isRuntimeValid.collectAsState()
+    val isEngineRunning by AppState.isEngineRunning.collectAsState()
     val settings by AppState.settings.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -72,6 +73,7 @@ fun AppShell(
                 collapsed = settings.sidebarCollapsed,
                 connectionName = "Local Mode",
                 isRuntimeValid = isRuntimeValid,
+                isEngineRunning = isEngineRunning,
                 gostVersion = null,
                 onItemSelected = onNavigate,
                 onToggleCollapse = {

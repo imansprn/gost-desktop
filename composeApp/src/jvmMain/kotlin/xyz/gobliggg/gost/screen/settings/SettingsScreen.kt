@@ -61,11 +61,11 @@ class SettingsScreen : Screen {
                         onCheckedChange = { AppState.updateSettings { s -> s.copy(sidebarCollapsed = it) } },
                         colors = CheckboxDefaults.colors(checkedColor = sc.focusRing, checkmarkColor = Color.Black),
                     )
-                    Spacer(Modifier.width(4.dp))
+                    Spacer(Modifier.width(Spacing.xs))
                     Text(
                         "Collapse sidebar by default",
                         color = sc.textSecondary,
-                        fontSize = 12.sp,
+                        style = GostTextStyles.bodyCompact,
                     )
                 }
             }
@@ -75,24 +75,11 @@ class SettingsScreen : Screen {
                 color = sc.borderSubtle,
             )
 
-            // ── Polling ──
-            SectionHeader("Polling")
+            // ── Logs ──
+            SectionHeader("Logs")
             SectionCard {
                 Text(
-                    "Default poll interval",
-                    color = sc.textSecondary,
-                    style = MaterialTheme.typography.labelMedium,
-                )
-                Spacer(Modifier.height(Spacing.sm))
-                SaaSToggleGroup(
-                    options = listOf(5, 10, 30, 60),
-                    selectedOption = settings.defaultPollIntervalSeconds,
-                    onOptionSelected = { sec -> AppState.updateSettings { it.copy(defaultPollIntervalSeconds = sec) } },
-                    labelModifier = { "${it}s" },
-                )
-                Spacer(Modifier.height(Spacing.md))
-                Text(
-                    "Log buffer size",
+                    "Retained log lines",
                     color = sc.textSecondary,
                     style = MaterialTheme.typography.labelMedium,
                 )
@@ -101,6 +88,12 @@ class SettingsScreen : Screen {
                     options = listOf(500, 1000, 5000, 10000),
                     selectedOption = settings.logBufferSize,
                     onOptionSelected = { size -> AppState.updateSettings { it.copy(logBufferSize = size) } },
+                )
+                Spacer(Modifier.height(Spacing.sm))
+                Text(
+                    "Controls how many recent process log lines are retained.",
+                    color = sc.textMuted,
+                    style = GostTextStyles.microLabel,
                 )
             }
 
@@ -118,11 +111,11 @@ class SettingsScreen : Screen {
                         onCheckedChange = { AppState.updateSettings { s -> s.copy(confirmDeletes = it) } },
                         colors = CheckboxDefaults.colors(checkedColor = sc.focusRing, checkmarkColor = Color.Black),
                     )
-                    Spacer(Modifier.width(4.dp))
+                    Spacer(Modifier.width(Spacing.xs))
                     Text(
                         "Require confirmation for delete actions",
                         color = sc.textSecondary,
-                        fontSize = 12.sp,
+                        style = GostTextStyles.bodyCompact,
                     )
                 }
             }

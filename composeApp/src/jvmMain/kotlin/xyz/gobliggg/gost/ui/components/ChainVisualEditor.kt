@@ -81,20 +81,16 @@ fun ChainVisualEditor(
             )
         }
 
-        OutlinedButton(
+        SaaSButton(
+            text = "Add Hop",
             onClick = {
                 val newList = (hops + HopDto("hop-${hops.size + 1}", listOf(NodeDto()))).toMutableList()
                 onUpdate(chain.copy(hops = newList))
             },
-            modifier = Modifier.fillMaxWidth().height(48.dp),
-            shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, sc.borderSubtle),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = sc.textSecondary),
-        ) {
-            Icon(Icons.Default.Add, contentDescription = "Add hop", modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(Spacing.sm))
-            Text("Add Hop")
-        }
+            modifier = Modifier.fillMaxWidth(),
+            type = SaaSButtonType.SECONDARY,
+            icon = Icons.Default.Add,
+        )
 
         Spacer(Modifier.height(Spacing.xxl))
     }
@@ -120,20 +116,28 @@ private fun HopCard(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(GostRadius.md))
                 .background(sc.surfaceCard)
-                .border(1.dp, sc.borderSubtle, RoundedCornerShape(12.dp))
+                .border(
+                    GostControlSize.borderWidth,
+                    sc.borderSubtle,
+                    RoundedCornerShape(GostRadius.md),
+                )
                 .padding(Spacing.lg),
-        verticalArrangement = Arrangement.spacedBy(Spacing.md),
+        verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier.size(20.dp).clip(androidx.compose.foundation.shape.CircleShape).background(sc.borderStrong),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("${index + 1}", color = sc.textMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    "${index + 1}",
+                    color = sc.textMuted,
+                    style = GostTextStyles.microLabel.copy(fontWeight = FontWeight.Bold),
+                )
             }
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(Spacing.lg))
             Text(
                 "Hop ${index + 1}",
                 style = MaterialTheme.typography.titleMedium,
@@ -143,33 +147,38 @@ private fun HopCard(
             Spacer(Modifier.weight(1f))
 
             // Reordering buttons
-            IconButton(onClick = onMoveUp, enabled = !isFirst, modifier = Modifier.size(24.dp)) {
+            IconTooltipButton(tooltip = "Move hop up", onClick = onMoveUp, enabled = !isFirst) {
                 Icon(
                     Icons.Default.KeyboardArrowUp,
-                    contentDescription = "Move Up",
-                    modifier = Modifier.size(18.dp),
+                    contentDescription = "Move Hop Up",
+                    modifier = Modifier.size(GostControlSize.iconMedium),
                     tint = sc.textSecondary,
                 )
             }
-            IconButton(onClick = onMoveDown, enabled = !isLast, modifier = Modifier.size(24.dp)) {
+            IconTooltipButton(tooltip = "Move hop down", onClick = onMoveDown, enabled = !isLast) {
                 Icon(
                     Icons.Default.KeyboardArrowDown,
-                    contentDescription = "Move Down",
-                    modifier = Modifier.size(18.dp),
+                    contentDescription = "Move Hop Down",
+                    modifier = Modifier.size(GostControlSize.iconMedium),
                     tint = sc.textSecondary,
                 )
             }
-            Spacer(Modifier.width(4.dp))
-            IconButton(onClick = onDelete, modifier = Modifier.size(24.dp)) {
-                Icon(Icons.Default.DeleteOutline, contentDescription = "Delete Hop", tint = sc.statusError, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(Spacing.xs))
+            IconTooltipButton(tooltip = "Delete hop", onClick = onDelete) {
+                Icon(
+                    Icons.Default.DeleteOutline,
+                    contentDescription = "Delete Hop",
+                    tint = sc.statusError,
+                    modifier = Modifier.size(GostControlSize.iconMedium),
+                )
             }
         }
 
-        Text("Hop Name", fontSize = 11.sp, color = sc.textMuted, fontWeight = FontWeight.SemiBold)
+        Text("Hop Name", color = sc.textMuted, style = GostTextStyles.pillLabel)
         SaaSTextField(
             value = hop.name ?: "",
             onValueChange = { onUpdate(hop.copy(name = it)) },
-            modifier = Modifier.fillMaxWidth().height(40.dp),
+            modifier = Modifier.fillMaxWidth(),
             placeholder = "e.g. My Proxy Hop",
         )
 
@@ -191,18 +200,15 @@ private fun HopCard(
             )
         }
 
-        TextButton(
+        SaaSButton(
+            text = "Add Node",
             onClick = {
                 val newList = ((hop.nodes ?: emptyList<NodeDto>()) + NodeDto()).toMutableList()
                 onUpdate(hop.copy(nodes = newList))
             },
-            contentPadding = PaddingValues(0.dp),
-            colors = ButtonDefaults.textButtonColors(contentColor = sc.textMuted),
-        ) {
-            Icon(Icons.Default.Add, contentDescription = "Add node", modifier = Modifier.size(14.dp))
-            Spacer(Modifier.width(4.dp))
-            Text("Add Node", fontSize = 12.sp, fontWeight = FontWeight.Medium)
-        }
+            type = SaaSButtonType.SECONDARY,
+            icon = Icons.Default.Add,
+        )
     }
 }
 
@@ -215,32 +221,35 @@ private fun NodeBlock(
     val sc = GostSemantics.colors
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(GostRadius.md),
         color = sc.surfaceInput.copy(alpha = 0.5f),
-        border = BorderStroke(1.dp, sc.borderSubtle),
+        border = BorderStroke(GostControlSize.borderWidth, sc.borderSubtle),
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Address", fontSize = 11.sp, color = sc.textMuted, fontWeight = FontWeight.SemiBold)
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            modifier = Modifier.padding(Spacing.xl),
+            verticalArrangement = Arrangement.spacedBy(Spacing.xl),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                Text("Address", color = sc.textMuted, style = GostTextStyles.pillLabel)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     SaaSTextField(
                         value = node.addr ?: "",
                         onValueChange = { onUpdate(node.copy(addr = it)) },
-                        modifier = Modifier.weight(1f).height(40.dp),
+                        modifier = Modifier.weight(1f),
                         placeholder = "1.2.3.4:1080",
                     )
-                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                    IconTooltipButton(tooltip = "Delete node", onClick = onDelete) {
                         Icon(
                             Icons.Default.Close,
                             contentDescription = "Delete Node",
                             tint = sc.statusError,
-                            modifier = Modifier.size(16.dp),
+                            modifier = Modifier.size(GostControlSize.icon),
                         )
                     }
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 Column(Modifier.weight(1f)) {
                     Text("Connector", style = MaterialTheme.typography.labelSmall, color = sc.textSecondary)
                     TypeDropdown(
@@ -304,31 +313,14 @@ private fun TypeDropdown(
     selected: String,
     onSelect: (String) -> Unit,
 ) {
-    val sc = GostSemantics.colors
-    SearchableStringDropdown(
-        selected = selected,
+    DropdownField(
+        value = selected,
         options = options,
         onSelect = onSelect,
-        modifier = Modifier.fillMaxWidth().height(40.dp),
-        searchPlaceholder = "Search types...",
-    ) { onOpen ->
-        Surface(
-            modifier = Modifier.fillMaxWidth().height(40.dp).clickable { onOpen() },
-            shape = RoundedCornerShape(8.dp),
-            color = sc.surfaceInput,
-            border = BorderStroke(1.dp, sc.borderSubtle),
-        ) {
-            Row(Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
-                Text(selected, fontSize = 13.sp, color = sc.textPrimary, modifier = Modifier.weight(1f))
-                Icon(
-                    Icons.Default.KeyboardArrowDown,
-                    contentDescription = "Open dropdown",
-                    tint = sc.textSecondary,
-                    modifier = Modifier.size(16.dp),
-                )
-            }
-        }
-    }
+        modifier = Modifier.fillMaxWidth(),
+        searchable = options.size >= 10,
+        contentDescription = "Select type",
+    )
 }
 
 @Composable
@@ -339,22 +331,22 @@ private fun InlineAuthBlock(
     val sc = GostSemantics.colors
     val auth = node.auth ?: AuthDto()
 
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
-            Text("User", fontSize = 11.sp, color = sc.textMuted, fontWeight = FontWeight.SemiBold)
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.xl)) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.weight(1f)) {
+            Text("User", color = sc.textMuted, style = GostTextStyles.pillLabel)
             SaaSTextField(
                 value = auth.username ?: "",
                 onValueChange = { onUpdate(node.copy(auth = auth.copy(username = it.ifBlank { null }))) },
-                modifier = Modifier.fillMaxWidth().height(40.dp),
+                modifier = Modifier.fillMaxWidth(),
                 placeholder = "username",
             )
         }
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
-            Text("Pass", fontSize = 11.sp, color = sc.textMuted, fontWeight = FontWeight.SemiBold)
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.weight(1f)) {
+            Text("Pass", color = sc.textMuted, style = GostTextStyles.pillLabel)
             SaaSTextField(
                 value = auth.password ?: "",
                 onValueChange = { onUpdate(node.copy(auth = auth.copy(password = it.ifBlank { null }))) },
-                modifier = Modifier.fillMaxWidth().height(40.dp),
+                modifier = Modifier.fillMaxWidth(),
                 placeholder = "password",
                 visualTransformation = PasswordVisualTransformation(),
             )
@@ -373,29 +365,29 @@ private fun SshAuthBlock(
     val meta = dial.metadata ?: emptyMap()
     val useKey = meta.containsKey("privateKeyFile")
 
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xl)) {
         Text("SSH Authentication", style = MaterialTheme.typography.labelSmall, color = sc.focusRing, fontWeight = FontWeight.Bold)
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
-                Text("User", fontSize = 11.sp, color = sc.textMuted, fontWeight = FontWeight.SemiBold)
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xl)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.weight(1f)) {
+                Text("User", color = sc.textMuted, style = GostTextStyles.pillLabel)
                 SaaSTextField(
                     value = auth.username ?: "",
                     onValueChange = {
                         onUpdate(node.copy(dialer = dial.copy(auth = auth.copy(username = it.ifBlank { null }))))
                     },
-                    modifier = Modifier.fillMaxWidth().height(40.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     placeholder = "username",
                 )
             }
             if (!useKey) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
-                    Text("Pass", fontSize = 11.sp, color = sc.textMuted, fontWeight = FontWeight.SemiBold)
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.weight(1f)) {
+                    Text("Pass", color = sc.textMuted, style = GostTextStyles.pillLabel)
                     SaaSTextField(
                         value = auth.password ?: "",
                         onValueChange = {
                             onUpdate(node.copy(dialer = dial.copy(auth = auth.copy(password = it.ifBlank { null }))))
                         },
-                        modifier = Modifier.fillMaxWidth().height(40.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         placeholder = "password",
                         visualTransformation = PasswordVisualTransformation(),
                     )
@@ -414,12 +406,12 @@ private fun SshAuthBlock(
                 },
                 colors = CheckboxDefaults.colors(checkedColor = sc.focusRing, checkmarkColor = Color.Black),
             )
-            Text("Use Private Key File", fontSize = 11.sp, color = sc.textSecondary)
+            Text("Use Private Key File", color = sc.textSecondary, style = GostTextStyles.pillLabel)
         }
 
         if (useKey) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Key File Path", fontSize = 11.sp, color = sc.textMuted, fontWeight = FontWeight.SemiBold)
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                Text("Key File Path", color = sc.textMuted, style = GostTextStyles.pillLabel)
                 SaaSTextField(
                     value = meta["privateKeyFile"] ?: "",
                     onValueChange = {
@@ -427,7 +419,7 @@ private fun SshAuthBlock(
                         newMeta["privateKeyFile"] = it
                         onUpdate(node.copy(dialer = dial.copy(metadata = newMeta)))
                     },
-                    modifier = Modifier.fillMaxWidth().height(40.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     placeholder = "/path/to/private.key",
                 )
             }

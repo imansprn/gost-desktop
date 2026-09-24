@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import xyz.gobliggg.gost.ui.GlobalWindowShortcuts
+import xyz.gobliggg.gost.ui.UnsavedChangesGuard
 import xyz.gobliggg.gost.ui.components.*
 import xyz.gobliggg.gost.ui.components.EmptyState
 import xyz.gobliggg.gost.ui.theme.*
@@ -30,11 +31,25 @@ class ConfigEditorScreen : Screen {
         val model = rememberScreenModel { ConfigEditorScreenModel() }
         val state by model.state.collectAsState()
         var reloadConfirmOpen by remember { mutableStateOf(false) }
+        var pendingServiceId by remember { mutableStateOf<String?>(null) }
         val sc = GostSemantics.colors
 
-        DisposableEffect(model) {
+        LaunchedEffect(state.isDirty) {
+            UnsavedChangesGuard.setDirty(state.isDirty)
+        }
+        DisposableEffect(Unit) {
+            onDispose { UnsavedChangesGuard.clear() }
+        }
+
+        DisposableEffect(model, state.isDirty) {
             val save = { model.save() }
-            val refresh = { model.reloadFromDisk() }
+            val refresh = {
+                if (state.isDirty) {
+                    reloadConfirmOpen = true
+                } else {
+                    model.reloadFromDisk()
+                }
+            }
             GlobalWindowShortcuts.saveHandler = save
             GlobalWindowShortcuts.refreshHandler = refresh
             onDispose {
@@ -112,9 +127,9 @@ class ConfigEditorScreen : Screen {
                             text = "Cancel",
                             onClick = { reloadConfirmOpen = false },
                             type = SaaSButtonType.SECONDARY,
-                            modifier = Modifier.widthIn(max = 160.dp),
+                            modifier = Modifier.widthIn(max = GostControlSize.dialogActionMaxWidth),
                         )
-                        Spacer(Modifier.width(12.dp))
+                        Spacer(Modifier.width(Spacing.lg))
                         SaaSButton(
                             text = "Discard & Reload",
                             onClick = {
@@ -122,17 +137,30 @@ class ConfigEditorScreen : Screen {
                                 model.reloadFromDisk()
                             },
                             type = SaaSButtonType.ACTION,
-                            modifier = Modifier.widthIn(max = 160.dp),
+                            modifier = Modifier.widthIn(max = GostControlSize.dialogActionMaxWidth),
                         )
                     }
                 }
+            }
+
+            if (pendingServiceId != null) {
+                ConfirmDialog(
+                    title = "Discard unsaved changes?",
+                    message = "Switching tunnels will discard the current raw configuration edits.",
+                    onConfirm = {
+                        val target = pendingServiceId
+                        pendingServiceId = null
+                        target?.let(model::selectService)
+                    },
+                    onDismiss = { pendingServiceId = null },
+                )
             }
 
             // ── Split: service list + editor ──
             Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 // Left: service selector
                 Column(
-                    modifier = Modifier.width(200.dp).fillMaxHeight(),
+                    modifier = Modifier.width(GostLayoutSize.compactSelectorPane).fillMaxHeight(),
                 ) {
                     SaaSTableHeader("TUNNELS")
                     Spacer(Modifier.height(Spacing.sm))
@@ -160,11 +188,17 @@ class ConfigEditorScreen : Screen {
                                                     Color.Transparent
                                                 },
                                             ).border(
-                                                width = 1.dp,
+                                                width = GostControlSize.borderWidth,
                                                 color = if (isSel) sc.focusRing else sc.borderSubtle,
                                                 shape = RoundedCornerShape(GostRadius.sm),
-                                            ).clickable { model.selectService(id) }
-                                            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+                                            ).clickable {
+                                                if (state.isDirty && id != state.selectedServiceId) {
+                                                    pendingServiceId = id
+                                                } else {
+                                                    model.selectService(id)
+                                                }
+                                            }
+                                            .padding(horizontal = Spacing.sm, vertical = Spacing.sm),
                                     color = if (isSel) sc.textPrimary else sc.textSecondary,
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
@@ -214,10 +248,8 @@ class ConfigEditorScreen : Screen {
                                         unfocusedTextColor = sc.textSecondary,
                                     ),
                                 textStyle =
-                                    androidx.compose.ui.text.TextStyle(
+                                    GostTextStyles.code.copy(
                                         fontFamily = MonoFontFamily,
-                                        fontSize = 12.sp,
-                                        lineHeight = 18.sp,
                                     ),
                             )
                         }

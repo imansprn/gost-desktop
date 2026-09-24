@@ -83,6 +83,7 @@ class ServicesScreenModel(
         return services.filter {
             it.name.lowercase().contains(q) ||
                 it.id.lowercase().contains(q) ||
+                it.addr.lowercase().contains(q) ||
                 it.errorMessage?.lowercase()?.contains(q) == true
         }
     }

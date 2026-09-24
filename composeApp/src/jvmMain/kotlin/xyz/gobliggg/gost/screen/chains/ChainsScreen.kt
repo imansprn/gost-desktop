@@ -22,7 +22,12 @@ import kotlinx.serialization.json.Json
 import xyz.gobliggg.gost.api.dto.ChainDto
 import xyz.gobliggg.gost.api.dto.HopDto
 import xyz.gobliggg.gost.api.dto.NodeDto
+import xyz.gobliggg.gost.data.AppState
 import xyz.gobliggg.gost.data.ConfigBuilder
+import xyz.gobliggg.gost.data.TemplateRuntimeSynchronizer
+import xyz.gobliggg.gost.data.TemplateTypes
+import xyz.gobliggg.gost.ui.ShellFeedback
+import xyz.gobliggg.gost.ui.UnsavedChangesGuard
 import xyz.gobliggg.gost.ui.components.*
 import xyz.gobliggg.gost.ui.theme.*
 
@@ -32,14 +37,23 @@ class ChainsScreen(
 ) : Screen {
     @Composable
     override fun Content() {
-        var templates by remember { mutableStateOf(ConfigBuilder.default().listTemplates("chains")) }
+        var templates by remember { mutableStateOf(ConfigBuilder.default().listTemplates(TemplateTypes.CHAINS)) }
         var selectedTemplate by remember { mutableStateOf<String?>(null) }
         var editingChain by remember { mutableStateOf<ChainDto?>(null) }
         var isDirty by remember { mutableStateOf(false) }
         var showCreateDialog by remember { mutableStateOf(false) }
         var newChainName by remember { mutableStateOf("") }
         var deleteTarget by remember { mutableStateOf<String?>(null) }
+        var pendingSelection by remember { mutableStateOf<String?>(null) }
         var searchQuery by remember { mutableStateOf("") }
+        val settings by AppState.settings.collectAsState()
+
+        LaunchedEffect(isDirty) {
+            UnsavedChangesGuard.setDirty(isDirty)
+        }
+        DisposableEffect(Unit) {
+            onDispose { UnsavedChangesGuard.clear() }
+        }
 
         val json =
             remember {
@@ -50,12 +64,31 @@ class ChainsScreen(
             }
 
         fun reload() {
-            templates = ConfigBuilder.default().listTemplates("chains")
+            templates = ConfigBuilder.default().listTemplates(TemplateTypes.CHAINS)
+        }
+
+        fun removeChain(name: String) {
+            val builder = ConfigBuilder.default()
+            val dependents = builder.findDependentServices(TemplateTypes.CHAINS, name)
+            if (dependents.isNotEmpty()) {
+                ShellFeedback.showSnackbar(
+                    "Cannot delete '$name'; used by: " + dependents.joinToString(),
+                )
+                return
+            }
+            try {
+                builder.deleteTemplate(TemplateTypes.CHAINS, name)
+                if (selectedTemplate == name) selectedTemplate = null
+                reload()
+                ShellFeedback.showSnackbar("Chain deleted")
+            } catch (e: Exception) {
+                ShellFeedback.showSnackbar(e.message ?: "Failed to delete chain")
+            }
         }
 
         LaunchedEffect(selectedTemplate) {
             if (selectedTemplate != null) {
-                val content = ConfigBuilder.default().readTemplate("chains", selectedTemplate!!)
+                val content = ConfigBuilder.default().readTemplate(TemplateTypes.CHAINS, selectedTemplate!!)
                 editingChain =
                     try {
                         if (content != null) json.decodeFromString<ChainDto>(content) else null
@@ -66,6 +99,15 @@ class ChainsScreen(
                 editingChain = null
             }
             isDirty = false
+        }
+
+        fun requestCreateChain() {
+            if (isDirty) {
+                ShellFeedback.showSnackbar("Save or discard the current chain changes first.")
+                return
+            }
+            newChainName = ""
+            showCreateDialog = true
         }
 
         val filteredTemplates =
@@ -90,10 +132,7 @@ class ChainsScreen(
                         actions = {
                             SaaSButton(
                                 text = "New Chain",
-                                onClick = {
-                                    newChainName = ""
-                                    showCreateDialog = true
-                                },
+                                onClick = { requestCreateChain() },
                                 type = SaaSButtonType.PRIMARY,
                             )
                         },
@@ -113,10 +152,7 @@ class ChainsScreen(
                                 description = "Chains route traffic through proxy nodes.",
                                 icon = Icons.Default.Link,
                                 actionLabel = "Create chain",
-                                onAction = {
-                                    newChainName = ""
-                                    showCreateDialog = true
-                                },
+                                onAction = { requestCreateChain() },
                             )
                         } else {
                             LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -125,8 +161,20 @@ class ChainsScreen(
                                     ChainListItem(
                                         name = name,
                                         isSelected = isSel,
-                                        onClick = { selectedTemplate = name },
-                                        onDelete = { deleteTarget = name },
+                                        onClick = {
+                                            if (isDirty && selectedTemplate != name) {
+                                                pendingSelection = name
+                                            } else {
+                                                selectedTemplate = name
+                                            }
+                                        },
+                                        onDelete = {
+                                            if (settings.confirmDeletes) {
+                                                deleteTarget = name
+                                            } else {
+                                                removeChain(name)
+                                            }
+                                        },
                                     )
                                 }
                             }
@@ -171,11 +219,47 @@ class ChainsScreen(
                                     SaaSButton(
                                         text = "Save Config",
                                         onClick = {
+                                            val builder = ConfigBuilder.default()
                                             val name = editingChain!!.name
-                                            if (!name.isNullOrBlank()) {
-                                                ConfigBuilder.default().saveTemplate("chains", name, json.encodeToString(editingChain))
+                                            try {
+                                                if (name.isNullOrBlank() || !builder.isValidName(name)) {
+                                                    throw IllegalArgumentException(
+                                                        "Use only letters, numbers, underscore, and hyphen.",
+                                                    )
+                                                }
+                                                if (name != selectedTemplate && builder.templateExists(TemplateTypes.CHAINS, name)) {
+                                                    throw IllegalArgumentException("A chain named '$name' already exists.")
+                                                }
+                                                if (name != selectedTemplate && selectedTemplate != null) {
+                                                    val dependents =
+                                                        builder.findDependentServices(
+                                                            TemplateTypes.CHAINS,
+                                                            selectedTemplate!!,
+                                                        )
+                                                    if (dependents.isNotEmpty()) {
+                                                        throw IllegalStateException(
+                                                            "Cannot rename while used by: " + dependents.joinToString(),
+                                                        )
+                                                    }
+                                                }
+
+                                                builder.saveTemplate(
+                                                    TemplateTypes.CHAINS,
+                                                    name,
+                                                    json.encodeToString(editingChain),
+                                                )
+                                                if (selectedTemplate != null && selectedTemplate != name) {
+                                                    builder.deleteTemplate(TemplateTypes.CHAINS, selectedTemplate!!)
+                                                }
+                                                TemplateRuntimeSynchronizer
+                                                    .synchronize(TemplateTypes.CHAINS, name)
+                                                    .getOrThrow()
+                                                selectedTemplate = name
                                                 isDirty = false
                                                 reload()
+                                                ShellFeedback.showSnackbar("Chain saved")
+                                            } catch (e: Exception) {
+                                                ShellFeedback.showSnackbar(e.message ?: "Failed to save chain")
                                             }
                                         },
                                         enabled = isDirty,
@@ -205,10 +289,7 @@ class ChainsScreen(
                 }
             }
             FloatingActionButton(
-                onClick = {
-                    newChainName = ""
-                    showCreateDialog = true
-                },
+                onClick = { requestCreateChain() },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(Spacing.xl),
@@ -218,6 +299,20 @@ class ChainsScreen(
             ) {
                 Icon(Icons.Default.Add, contentDescription = "New chain")
             }
+        }
+
+        if (pendingSelection != null) {
+            ConfirmDialog(
+                title = "Discard unsaved changes?",
+                message = "Switching chains will discard the current edits.",
+                onConfirm = {
+                    val target = pendingSelection
+                    pendingSelection = null
+                    isDirty = false
+                    selectedTemplate = target
+                },
+                onDismiss = { pendingSelection = null },
+            )
         }
 
         if (showCreateDialog) {
@@ -232,11 +327,22 @@ class ChainsScreen(
                     color = sc.textMuted,
                 )
                 Spacer(Modifier.height(Spacing.lg))
+                val createError =
+                    when {
+                        newChainName.isBlank() -> "Name is required"
+                        !ConfigBuilder.default().isValidName(newChainName) ->
+                            "Use only letters, numbers, underscore, and hyphen"
+                        ConfigBuilder.default().templateExists(TemplateTypes.CHAINS, newChainName) ->
+                            "A chain with this name already exists"
+                        else -> null
+                    }
                 SaaSTextField(
                     value = newChainName,
                     onValueChange = { newChainName = it },
                     label = "Chain Name",
                     modifier = Modifier.fillMaxWidth(),
+                    isError = newChainName.isNotBlank() && createError != null,
+                    helperText = if (newChainName.isBlank()) null else createError,
                 )
                 Spacer(Modifier.height(Spacing.xl))
                 Row(
@@ -249,19 +355,32 @@ class ChainsScreen(
                         onClick = { showCreateDialog = false },
                         type = SaaSButtonType.SECONDARY,
                     )
-                    Spacer(Modifier.width(Spacing.md))
+                    Spacer(Modifier.width(Spacing.sm))
                     SaaSButton(
                         text = "Create",
                         onClick = {
-                            if (newChainName.isNotBlank()) {
-                                val newChain = ChainDto(name = newChainName, hops = listOf(HopDto("hop-1", listOf(NodeDto()))))
-                                ConfigBuilder.default().saveTemplate("chains", newChainName, json.encodeToString(newChain))
-                                reload()
-                                selectedTemplate = newChainName
-                                showCreateDialog = false
+                            if (createError == null) {
+                                try {
+                                    val newChain =
+                                        ChainDto(
+                                            name = newChainName,
+                                            hops = listOf(HopDto("hop-1", listOf(NodeDto()))),
+                                        )
+                                    ConfigBuilder.default().saveTemplate(
+                                        TemplateTypes.CHAINS,
+                                        newChainName,
+                                        json.encodeToString(newChain),
+                                    )
+                                    reload()
+                                    selectedTemplate = newChainName
+                                    showCreateDialog = false
+                                    ShellFeedback.showSnackbar("Chain created")
+                                } catch (e: Exception) {
+                                    ShellFeedback.showSnackbar(e.message ?: "Failed to create chain")
+                                }
                             }
                         },
-                        enabled = newChainName.isNotBlank(),
+                        enabled = createError == null,
                         type = SaaSButtonType.PRIMARY,
                     )
                 }
@@ -273,11 +392,9 @@ class ChainsScreen(
                 title = "Delete Chain",
                 message = "Remove \"$deleteTarget\"? Tunnels using this chain will fail.",
                 onConfirm = {
-                    val dir = java.io.File(System.getProperty("user.home"), ".gost-manager/templates/chains")
-                    java.io.File(dir, "$deleteTarget.json").delete()
-                    if (selectedTemplate == deleteTarget) selectedTemplate = null
+                    val target = deleteTarget!!
                     deleteTarget = null
-                    reload()
+                    removeChain(target)
                 },
                 onDismiss = { deleteTarget = null },
             )
@@ -300,7 +417,7 @@ class ChainsScreen(
                     .clip(RoundedCornerShape(GostRadius.sm))
                     .background(if (isSelected) sc.stateSelected else Color.Transparent)
                     .clickable { onClick() }
-                    .padding(horizontal = Spacing.lg, vertical = Spacing.md),
+                    .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -309,21 +426,27 @@ class ChainsScreen(
                 modifier = Modifier.size(16.dp),
                 tint = if (isSelected) sc.statusSuccess else sc.textMuted,
             )
-            Spacer(Modifier.width(Spacing.md))
+            Spacer(Modifier.width(Spacing.sm))
             Text(
                 text = name,
                 modifier = Modifier.weight(1f),
-                fontSize = 13.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                style =
+                    GostTextStyles.navItem.copy(
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    ),
                 color = if (isSelected) sc.textPrimary else sc.textSecondary,
             )
             if (isSelected) {
                 IconTooltipButton(
                     tooltip = "Delete chain",
                     onClick = onDelete,
-                    modifier = Modifier.size(24.dp),
                 ) {
-                    Icon(Icons.Default.Close, contentDescription = "Delete", modifier = Modifier.size(16.dp), tint = sc.textMuted)
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Delete",
+                        modifier = Modifier.size(GostControlSize.icon),
+                        tint = sc.textMuted,
+                    )
                 }
             }
         }

@@ -1,6 +1,5 @@
 package xyz.gobliggg.gost.navigation
 
-import xyz.gobliggg.gost.data.ServiceWizardDraftStore
 import java.util.UUID
 
 /**
@@ -20,15 +19,12 @@ import java.util.UUID
  */
 
 /**
- * Stack id for a **fresh** New Service wizard.
+ * Stack id for a New Service wizard.
  *
- * Clears any persisted new-service draft so the form does not reopen with old fields, and uses a unique id so
- * the shell does not reuse another wizard session's screen model.
+ * A unique id prevents screen-model reuse. Any persisted draft is handled by the wizard itself,
+ * where the user can explicitly resume or start fresh.
  */
-fun newServiceWizardRoute(): String {
-    ServiceWizardDraftStore.default().clear()
-    return "service-new-${UUID.randomUUID()}"
-}
+fun newServiceWizardRoute(): String = "service-new-${UUID.randomUUID()}"
 
 /** Stack id for a **fresh** New Auther editor route. */
 fun newAutherEditorRoute(): String = "auther-new-${UUID.randomUUID()}"

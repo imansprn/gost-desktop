@@ -7,6 +7,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 @Serializable
 enum class ServiceStatus {
@@ -25,6 +27,7 @@ data class ServiceEntity(
     val pid: Long? = null,
     val status: ServiceStatus = ServiceStatus.IDLE,
     val errorMessage: String? = null,
+    val desiredRunning: Boolean = false,
 )
 
 class ServiceRegistry(
@@ -89,13 +92,25 @@ class ServiceRegistry(
         }
     }
 
-    private fun save() {
+    private fun save(next: List<ServiceEntity>): Boolean =
         try {
-            servicesFile.writeText(json.encodeToString(_services.value))
+            val temp = File.createTempFile("services", ".json.tmp", servicesFile.parentFile)
+            temp.writeText(json.encodeToString(next))
+            try {
+                Files.move(
+                    temp.toPath(),
+                    servicesFile.toPath(),
+                    StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING,
+                )
+            } catch (_: Exception) {
+                Files.move(temp.toPath(), servicesFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            }
+            true
         } catch (e: Exception) {
             println("Failed to save services: ${e.message}")
+            false
         }
-    }
 
     fun addOrUpdateService(service: ServiceEntity) {
         val current = _services.value.toMutableList()
@@ -105,8 +120,9 @@ class ServiceRegistry(
         } else {
             current.add(service)
         }
-        _services.value = current
-        save()
+        if (save(current)) {
+            _services.value = current
+        }
     }
 
     fun updateServiceStatus(
@@ -125,15 +141,28 @@ class ServiceRegistry(
                     pid = pid,
                     errorMessage = errorMessage,
                 )
-            _services.value = current
-            save()
+            if (save(current)) {
+                _services.value = current
+            }
         }
     }
 
     fun removeService(id: String) {
         val current = _services.value.filter { it.id != id }
-        _services.value = current
-        save()
+        if (save(current)) {
+            _services.value = current
+        }
+    }
+
+    fun updateDesiredRunning(id: String, desiredRunning: Boolean) {
+        val current = _services.value.toMutableList()
+        val index = current.indexOfFirst { it.id == id }
+        if (index >= 0) {
+            current[index] = current[index].copy(desiredRunning = desiredRunning)
+            if (save(current)) {
+                _services.value = current
+            }
+        }
     }
 
     fun getService(id: String): ServiceEntity? = _services.value.find { it.id == id }

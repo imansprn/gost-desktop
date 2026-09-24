@@ -15,10 +15,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
+import xyz.gobliggg.gost.data.AppState
 import xyz.gobliggg.gost.data.ServiceStatus
 import xyz.gobliggg.gost.ui.components.*
 import xyz.gobliggg.gost.ui.theme.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+
+private object ServiceTableDimensions {
+    val searchWidth = 280.dp
+    val addressWidth = 200.dp
+    val pidWidth = 80.dp
+    val statusWidth = 110.dp
+    val actionsWidth = 180.dp
+    val actionButtonWidth = 80.dp
+    val optionsWidth = 64.dp
+}
 
 class ServicesScreen(
     private val onCreateService: () -> Unit = {},
@@ -29,6 +40,8 @@ class ServicesScreen(
         val model = rememberScreenModel { ServicesScreenModel() }
         val SaASAction = Color(0xFF0F2B2B)
         val state by model.state.collectAsState()
+        val settings by AppState.settings.collectAsState()
+        val engineRunning by AppState.isEngineRunning.collectAsState()
         var deleteTarget by remember { mutableStateOf<String?>(null) }
         var rowMenuService by remember { mutableStateOf<String?>(null) }
         val sc = GostSemantics.colors
@@ -44,9 +57,9 @@ class ServicesScreen(
                             query = state.searchQuery,
                             onQueryChange = model::search,
                             placeholder = "Search tunnels…",
-                            modifier = Modifier.width(280.dp),
+                            modifier = Modifier.width(ServiceTableDimensions.searchWidth),
                         )
-                        Spacer(Modifier.width(Spacing.md))
+                        Spacer(Modifier.width(Spacing.sm))
                         SaaSButton(
                             text = "Create Tunnel",
                             onClick = onCreateService,
@@ -90,11 +103,15 @@ class ServicesScreen(
                             .padding(horizontal = Spacing.lg, vertical = Spacing.tableHeaderRowV),
                     ) {
                         SaaSTableHeader("NAME", Modifier.weight(1f))
-                        SaaSTableHeader("LISTEN ADDRESS", Modifier.width(200.dp))
-                        SaaSTableHeader("PID", Modifier.width(80.dp))
-                        SaaSTableHeader("STATUS", Modifier.width(110.dp))
-                        SaaSTableHeader("QUICK ACTIONS", Modifier.width(180.dp))
-                        SaaSTableHeader("OPTIONS", Modifier.width(64.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+                        SaaSTableHeader("LISTEN ADDRESS", Modifier.width(ServiceTableDimensions.addressWidth))
+                        SaaSTableHeader("PID", Modifier.width(ServiceTableDimensions.pidWidth))
+                        SaaSTableHeader("STATUS", Modifier.width(ServiceTableDimensions.statusWidth))
+                        SaaSTableHeader("QUICK ACTIONS", Modifier.width(ServiceTableDimensions.actionsWidth))
+                        SaaSTableHeader(
+                            "OPTIONS",
+                            Modifier.width(ServiceTableDimensions.optionsWidth),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                        )
                     }
                     HorizontalDivider(color = sc.borderSubtle)
 
@@ -102,7 +119,7 @@ class ServicesScreen(
                         Row(
                             Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = Spacing.lg, vertical = Spacing.md),
+                                .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Column(Modifier.weight(1f)) {
@@ -129,7 +146,7 @@ class ServicesScreen(
                                 svc.addr,
                                 color = sc.textMuted,
                                 style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.width(200.dp),
+                                modifier = Modifier.width(ServiceTableDimensions.addressWidth),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -138,40 +155,45 @@ class ServicesScreen(
                                 svc.pid?.toString() ?: "—",
                                 color = sc.textMuted,
                                 style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.width(80.dp),
+                                modifier = Modifier.width(ServiceTableDimensions.actionButtonWidth),
                             )
 
-                            Box(Modifier.width(110.dp)) {
+                            Box(Modifier.width(ServiceTableDimensions.statusWidth)) {
                                 ServiceStatusPill(status = svc.status)
                             }
 
                             // Quick Actions
-                            Row(Modifier.width(180.dp), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                            Row(Modifier.width(ServiceTableDimensions.actionsWidth), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                                 if (svc.status == ServiceStatus.RUNNING) {
                                     SaaSButton(
                                         text = "Stop",
                                         onClick = { model.stopService(svc.id) },
                                         type = SaaSButtonType.SECONDARY,
-                                        modifier = Modifier.width(80.dp),
+                                        modifier = Modifier.width(ServiceTableDimensions.actionButtonWidth),
                                     )
                                 } else {
                                     SaaSButton(
                                         text = "Start",
                                         onClick = { model.startService(svc.id) },
+                                        enabled = engineRunning,
                                         type = SaaSButtonType.ACTION,
-                                        modifier = Modifier.width(80.dp),
+                                        modifier = Modifier.width(ServiceTableDimensions.actionButtonWidth),
                                     )
                                 }
 
                                 SaaSButton(
                                     text = "Restart",
                                     onClick = { model.restartService(svc.id) },
+                                    enabled = engineRunning,
                                     type = SaaSButtonType.SECONDARY,
-                                    modifier = Modifier.width(80.dp),
+                                    modifier = Modifier.width(ServiceTableDimensions.actionButtonWidth),
                                 )
                             }
 
-                            Box(Modifier.width(64.dp), contentAlignment = Alignment.CenterEnd) {
+                            Box(
+                                Modifier.width(ServiceTableDimensions.optionsWidth),
+                                contentAlignment = Alignment.CenterEnd,
+                            ) {
                                 IconTooltipButton(
                                     tooltip = "More actions",
                                     onClick = { rowMenuService = svc.id },
@@ -180,7 +202,7 @@ class ServicesScreen(
                                         Icons.Default.MoreVert,
                                         contentDescription = "Actions for ${svc.name}",
                                         tint = sc.textMuted,
-                                        modifier = Modifier.size(20.dp),
+                                        modifier = Modifier.size(GostControlSize.iconLarge),
                                     )
                                 }
                                 DropdownMenu(
@@ -199,7 +221,11 @@ class ServicesScreen(
                                         text = { Text("Delete…", color = sc.statusError) },
                                         onClick = {
                                             rowMenuService = null
-                                            deleteTarget = svc.id
+                                            if (settings.confirmDeletes) {
+                                                deleteTarget = svc.id
+                                            } else {
+                                                model.deleteService(svc.id)
+                                            }
                                         },
                                         leadingIcon = {
                                             Icon(

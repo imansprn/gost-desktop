@@ -40,6 +40,7 @@ fun AdvancedObjectDialog(
             }
         }
     val sc = GostSemantics.colors
+    var rawError by remember { mutableStateOf<String?>(null) }
 
     // Global name state
     var name by remember {
@@ -78,7 +79,7 @@ fun AdvancedObjectDialog(
         showSplit = true,
         leftContent = {
             SaaSTableHeader("EDITOR MODE")
-            Spacer(Modifier.height(Spacing.md))
+            Spacer(Modifier.height(Spacing.sm))
 
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 ModeSelectTab(
@@ -102,14 +103,14 @@ fun AdvancedObjectDialog(
             Text(
                 "Category: ${tab.name}",
                 color = sc.textSecondary.copy(alpha = 0.85f),
-                fontSize = 12.sp,
+                style = GostTextStyles.bodyCompact,
             )
         },
     ) {
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             if (editTab == 0) {
                 SaaSTableHeader("BASIC IDENTIFIER")
-                Spacer(Modifier.height(Spacing.md))
+                Spacer(Modifier.height(Spacing.sm))
 
                 SaaSTextField(
                     label = "Identifier Name *",
@@ -135,14 +136,19 @@ fun AdvancedObjectDialog(
                 }
             } else {
                 SaaSTableHeader("RAW CONFIGURATION (JSON)")
-                Spacer(Modifier.height(Spacing.md))
+                Spacer(Modifier.height(Spacing.sm))
 
                 SaaSTextField(
                     value = rawJson,
-                    onValueChange = { rawJson = it },
+                    onValueChange = {
+                        rawJson = it
+                        rawError = null
+                    },
                     modifier = Modifier.fillMaxWidth().height(400.dp),
                     placeholder = "Paste JSON here...",
                     singleLine = false,
+                    isError = rawError != null,
+                    helperText = rawError,
                 )
             }
 
@@ -153,13 +159,13 @@ fun AdvancedObjectDialog(
                     text = "Cancel",
                     onClick = onDismiss,
                     type = SaaSButtonType.SECONDARY,
-                    modifier = Modifier.widthIn(max = 160.dp),
+                    modifier = Modifier.widthIn(max = GostControlSize.dialogActionMaxWidth),
                 )
-                Spacer(Modifier.width(Spacing.md))
-                SaaSButton(
-                    text = "Save Template",
-                    onClick = {
-                        if (editTab == 1) {
+                if (editTab == 1) {
+                    Spacer(Modifier.width(Spacing.sm))
+                    SaaSButton(
+                        text = "Save Template",
+                        onClick = {
                             try {
                                 val parsed =
                                     when (tab) {
@@ -168,17 +174,18 @@ fun AdvancedObjectDialog(
                                         AdvancedTab.RESOLVERS -> json.decodeFromString<ResolverDto>(rawJson)
                                         AdvancedTab.HOSTS -> json.decodeFromString<HostsDto>(rawJson)
                                     }
+                                rawError = null
                                 onSave(parsed)
                             } catch (e: Exception) {
-                                // Error handling
+                                rawError = e.message ?: "Invalid JSON"
                             }
-                        }
-                    },
-                    enabled = name.isNotBlank() || editTab == 1,
-                    type = SaaSButtonType.ACTION,
-                    icon = Icons.Default.Save,
-                    modifier = Modifier.widthIn(max = 160.dp),
-                )
+                        },
+                        enabled = rawJson.isNotBlank(),
+                        type = SaaSButtonType.ACTION,
+                        icon = Icons.Default.Save,
+                        modifier = Modifier.widthIn(max = GostControlSize.dialogActionMaxWidth),
+                    )
+                }
             }
         }
     }
@@ -214,45 +221,45 @@ fun BypassAdmissionForm(
     }
 
     SaaSTableHeader("STRATEGY")
-    Spacer(Modifier.height(Spacing.md))
+    Spacer(Modifier.height(Spacing.sm))
 
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        listOf(false to if (isAdmission) "Deny list" else "Blacklist", true to if (isAdmission) "Allow list" else "Whitelist").forEach { (valBool, label) ->
-            val active = reverse == valBool
-            Box(
-                Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(if (active) sc.stateSelected else sc.surfaceInput)
-                    .border(1.dp, if (active) sc.statusSuccess else sc.borderSubtle, RoundedCornerShape(8.dp))
-                    .clickable { reverse = valBool }
-                    .padding(vertical = 12.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    label.uppercase(),
-                    color = if (active) sc.statusSuccess else sc.textSecondary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp,
-                )
+    SegmentedControl(
+        options = listOf(false, true),
+        selected = reverse,
+        onSelect = { reverse = it },
+        label = {
+            if (it) {
+                if (isAdmission) "ALLOW LIST" else "WHITELIST"
+            } else {
+                if (isAdmission) "DENY LIST" else "BLACKLIST"
             }
-        }
-    }
+        },
+        modifier = Modifier.fillMaxWidth(),
+        equalWidth = true,
+    )
 
     Spacer(Modifier.height(Spacing.xl))
     SaaSTableHeader("MATCHING RULES")
-    Spacer(Modifier.height(Spacing.md))
+    Spacer(Modifier.height(Spacing.sm))
 
     matchers.forEachIndexed { idx, rule ->
-        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(vertical = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
             SaaSTextField(
                 value = rule,
                 onValueChange = { matchers[idx] = it },
                 modifier = Modifier.weight(1f),
                 placeholder = "e.g. 192.168.1.0/24 or *.google.com",
             )
-            IconButton(onClick = { matchers.removeAt(idx) }) {
-                Icon(Icons.Default.Close, contentDescription = null, tint = RedStatus, modifier = Modifier.size(16.dp))
+            IconTooltipButton(
+                tooltip = "Remove rule",
+                onClick = { matchers.removeAt(idx) },
+            ) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Remove rule",
+                    tint = RedStatus,
+                    modifier = Modifier.size(GostControlSize.icon),
+                )
             }
         }
     }
@@ -265,6 +272,24 @@ fun BypassAdmissionForm(
         icon = Icons.Default.Add,
         modifier = Modifier.fillMaxWidth(),
     )
+
+    Spacer(Modifier.height(Spacing.xl))
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        SaaSButton(
+            text = "Save Template",
+            onClick = {
+                val cleaned = matchers.map { it.trim() }.filter { it.isNotBlank() }
+                if (isAdmission) {
+                    onSave(AdmissionDto(name = name, reverse = reverse, matchers = cleaned))
+                } else {
+                    onSave(BypassDto(name = name, reverse = reverse, matchers = cleaned))
+                }
+            },
+            enabled = name.matches(Regex("^[a-zA-Z0-9_-]+$")),
+            type = SaaSButtonType.ACTION,
+            icon = Icons.Default.Save,
+        )
+    }
 }
 
 @Composable
@@ -283,58 +308,52 @@ fun ResolverForm(
     }
 
     SaaSTableHeader("RESOLVER SETTINGS")
-    Spacer(Modifier.height(Spacing.md))
+    Spacer(Modifier.height(Spacing.sm))
 
     SaaSTextField(label = "TTL Override", value = ttl, onValueChange = { ttl = it }, placeholder = "60s")
 
     Spacer(Modifier.height(Spacing.lg))
 
-    Text("Preference", color = sc.textMuted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+    Text("Preference", color = sc.textMuted, style = GostTextStyles.bodyCompact.copy(fontWeight = FontWeight.SemiBold))
     Spacer(Modifier.height(Spacing.sm))
-    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        listOf("ipv4", "ipv6").forEach { p ->
-            val active = prefer == p
-            Box(
-                Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(if (active) sc.stateSelected else sc.surfaceInput)
-                    .border(1.dp, if (active) sc.statusSuccess else sc.borderSubtle, RoundedCornerShape(8.dp))
-                    .clickable { prefer = p }
-                    .padding(vertical = 12.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    p.uppercase(),
-                    color = if (active) sc.statusSuccess else sc.textSecondary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp,
-                )
-            }
-        }
-    }
+    SegmentedControl(
+        options = listOf("ipv4", "ipv6"),
+        selected = prefer,
+        onSelect = { prefer = it },
+        label = { it.uppercase() },
+        modifier = Modifier.fillMaxWidth(),
+        equalWidth = true,
+    )
 
     Spacer(Modifier.height(Spacing.xl))
     SaaSTableHeader("NAMESERVERS")
-    Spacer(Modifier.height(Spacing.md))
+    Spacer(Modifier.height(Spacing.sm))
 
     nameservers.forEachIndexed { idx, ns ->
-        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(vertical = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
             SaaSTextField(
                 value = ns.addr ?: "",
                 onValueChange = { nameservers[idx] = ns.copy(addr = it) },
                 modifier = Modifier.weight(0.55f),
                 placeholder = "8.8.8.8:53",
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(Spacing.sm))
             SaaSTextField(
                 value = ns.chain ?: "",
                 onValueChange = { nameservers[idx] = ns.copy(chain = it) },
                 modifier = Modifier.weight(0.35f),
                 placeholder = "Chain ID",
             )
-            IconButton(onClick = { nameservers.removeAt(idx) }) {
-                Icon(Icons.Default.Close, contentDescription = null, tint = RedStatus, modifier = Modifier.size(16.dp))
+            IconTooltipButton(
+                tooltip = "Remove nameserver",
+                onClick = { nameservers.removeAt(idx) },
+            ) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Remove nameserver",
+                    tint = RedStatus,
+                    modifier = Modifier.size(GostControlSize.icon),
+                )
             }
         }
     }
@@ -347,6 +366,27 @@ fun ResolverForm(
         icon = Icons.Default.Add,
         modifier = Modifier.fillMaxWidth(),
     )
+
+    Spacer(Modifier.height(Spacing.xl))
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        val cleaned = nameservers.filter { !it.addr.isNullOrBlank() }
+        SaaSButton(
+            text = "Save Template",
+            onClick = {
+                onSave(
+                    ResolverDto(
+                        name = name,
+                        nameservers = cleaned,
+                        ttl = ttl.ifBlank { null },
+                        prefer = prefer,
+                    ),
+                )
+            },
+            enabled = name.matches(Regex("^[a-zA-Z0-9_-]+$")) && cleaned.isNotEmpty(),
+            type = SaaSButtonType.ACTION,
+            icon = Icons.Default.Save,
+        )
+    }
 }
 
 @Composable
@@ -363,18 +403,18 @@ fun HostsForm(
     }
 
     SaaSTableHeader("HOST MAPPINGS")
-    Spacer(Modifier.height(Spacing.md))
+    Spacer(Modifier.height(Spacing.sm))
 
     mappings.forEachIndexed { idx, mapping ->
         Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .padding(vertical = Spacing.sm)
+                    .clip(RoundedCornerShape(GostRadius.md))
                     .background(sc.surfaceCard)
-                    .border(1.dp, sc.borderSubtle, RoundedCornerShape(12.dp))
-                    .padding(12.dp),
+                    .border(GostControlSize.borderWidth, sc.borderSubtle, RoundedCornerShape(GostRadius.md))
+                    .padding(Spacing.lg),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 SaaSTextField(
@@ -383,11 +423,19 @@ fun HostsForm(
                     modifier = Modifier.weight(1f),
                     placeholder = "IP Address (e.g. 1.2.3.4)",
                 )
-                IconButton(onClick = { mappings.removeAt(idx) }) {
-                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(20.dp), tint = RedStatus)
+                IconTooltipButton(
+                    tooltip = "Remove mapping",
+                    onClick = { mappings.removeAt(idx) },
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Remove mapping",
+                        modifier = Modifier.size(GostControlSize.icon),
+                        tint = RedStatus,
+                    )
                 }
             }
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(Spacing.lg))
             // Hostnames for this IP
             mapping.hostnames?.forEachIndexed { hIdx, host ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -398,35 +446,42 @@ fun HostsForm(
                             newHosts[hIdx] = it
                             mappings[idx] = mapping.copy(hostnames = newHosts)
                         },
-                        modifier = Modifier.weight(1f).padding(start = 16.dp),
+                        modifier = Modifier.weight(1f).padding(start = Spacing.xl),
                         placeholder = "example.com",
                     )
-                    IconButton(onClick = {
-                        val newHosts = mapping.hostnames!!.toMutableList()
-                        if (newHosts.size > 1) newHosts.removeAt(hIdx)
-                        mappings[idx] = mapping.copy(hostnames = newHosts)
-                    }) {
-                        Icon(Icons.Default.Close, contentDescription = null, tint = RedStatus, modifier = Modifier.size(14.dp))
+                    IconTooltipButton(
+                        tooltip = "Remove hostname",
+                        onClick = {
+                            val newHosts = mapping.hostnames!!.toMutableList()
+                            if (newHosts.size > 1) newHosts.removeAt(hIdx)
+                            mappings[idx] = mapping.copy(hostnames = newHosts)
+                        },
+                    ) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Remove hostname",
+                            tint = RedStatus,
+                            modifier = Modifier.size(GostControlSize.icon),
+                        )
                     }
                 }
             }
 
-            TextButton(
+            SaaSButton(
+                text = "Add Hostname",
                 onClick = {
                     val newHosts = mapping.hostnames!!.toMutableList()
                     newHosts.add("")
                     mappings[idx] = mapping.copy(hostnames = newHosts)
                 },
-                modifier = Modifier.padding(start = 8.dp),
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp), tint = sc.statusSuccess)
-                Spacer(Modifier.width(4.dp))
-                Text("Add Hostname", fontSize = 11.sp, color = sc.statusSuccess)
-            }
+                modifier = Modifier.padding(start = Spacing.sm),
+                type = SaaSButtonType.SECONDARY,
+                icon = Icons.Default.Add,
+            )
         }
     }
 
-    Spacer(Modifier.height(Spacing.md))
+    Spacer(Modifier.height(Spacing.sm))
     SaaSButton(
         text = "Add New IP Mapping",
         onClick = { mappings.add(HostMappingDto("", listOf(""))) },
@@ -434,6 +489,27 @@ fun HostsForm(
         icon = Icons.Default.Add,
         modifier = Modifier.fillMaxWidth(),
     )
+
+    Spacer(Modifier.height(Spacing.xl))
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        val cleaned =
+            mappings
+                .filter { !it.ip.isNullOrBlank() }
+                .map { mapping ->
+                    mapping.copy(
+                        hostnames = mapping.hostnames?.map { it.trim() }?.filter { it.isNotBlank() },
+                    )
+                }
+                .filter { !it.hostnames.isNullOrEmpty() }
+
+        SaaSButton(
+            text = "Save Template",
+            onClick = { onSave(HostsDto(name = name, mappings = cleaned)) },
+            enabled = name.matches(Regex("^[a-zA-Z0-9_-]+$")) && cleaned.isNotEmpty(),
+            type = SaaSButtonType.ACTION,
+            icon = Icons.Default.Save,
+        )
+    }
 }
 
 @Composable
@@ -443,20 +519,10 @@ private fun ModeSelectTab(
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
-    val sc = GostSemantics.colors
-    Box(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(if (isSelected) sc.stateSelected else Color.Transparent)
-                .border(1.dp, if (isSelected) sc.statusSuccess.copy(alpha = 0.3f) else Color.Transparent, RoundedCornerShape(12.dp))
-                .clickable { onClick() }
-                .padding(Spacing.md),
-    ) {
-        Column {
-            Text(label, color = if (isSelected) sc.textPrimary else sc.textSecondary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text(description, color = sc.textMuted, fontSize = 11.sp)
-        }
-    }
+    SaaSModeOption(
+        label = label,
+        description = description,
+        selected = isSelected,
+        onClick = onClick,
+    )
 }

@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import xyz.gobliggg.gost.data.AppState
 import xyz.gobliggg.gost.data.ProcessManager
 import xyz.gobliggg.gost.data.ServiceRegistry
 import xyz.gobliggg.gost.ui.components.*
@@ -37,6 +38,16 @@ private data class LogTerminalPalette(
     val onSurfaceMuted: Color,
     val onSurfaceDim: Color,
 )
+
+private object LogLayoutDimensions {
+    val serviceFilterMinWidth = 180.dp
+    val serviceFilterMaxWidth = 260.dp
+    val searchMinWidth = 160.dp
+    val searchMaxWidth = 480.dp
+    val emptyIcon = 36.dp
+    val timestampWidth = 90.dp
+    val levelWidth = 44.dp
+}
 
 @Composable
 private fun LogLevelFilterChip(
@@ -59,15 +70,18 @@ private fun LogLevelFilterChip(
         Modifier
             .clip(RoundedCornerShape(GostRadius.sm))
             .background(if (isActive) activeBg else inactiveBg)
-            .border(1.dp, if (isActive) activeFg.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.05f), RoundedCornerShape(GostRadius.sm))
+            .border(
+                GostControlSize.borderWidth,
+                if (isActive) activeFg.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.05f),
+                RoundedCornerShape(GostRadius.sm),
+            )
             .clickable { onToggle() }
             .padding(horizontal = Spacing.sm, vertical = Spacing.xs),
     ) {
         Text(
             levelLabel,
             color = if (isActive) activeFg else inactiveFg,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
+            style = GostTextStyles.pillLabel.copy(fontWeight = FontWeight.Bold),
         )
     }
 }
@@ -130,11 +144,8 @@ class LogsScreenModel(
     private val serviceRegistry: ServiceRegistry = ServiceRegistry.default(),
     private val processManager: ProcessManager = ProcessManager.default(),
 ) : ScreenModel {
-    private val _state = MutableStateFlow(LogsUiState(sourceAvailable = true))
+    private val _state = MutableStateFlow(LogsUiState(sourceAvailable = false))
     val state: StateFlow<LogsUiState> = _state.asStateFlow()
-
-    // Limits
-    private val maxLines = 1000
 
     init {
         screenModelScope.launch {
@@ -150,11 +161,13 @@ class LogsScreenModel(
             processManager.logs.collect { event ->
                 val line = parseGostLog(event.text, event.serviceId, event.timestamp)
                 val s = _state.value
+                val maxLines = AppState.settings.value.logBufferSize.coerceIn(100, 10_000)
                 val newEntries = (s.entries + line).takeLast(maxLines)
                 _state.value =
                     s.copy(
                         entries = newEntries,
                         filteredEntries = applyFilterSync(newEntries, s.levelFilter, s.serviceFilter, s.searchQuery),
+                        sourceAvailable = true,
                     )
             }
         }
@@ -222,7 +235,13 @@ class LogsScreenModel(
     }
 
     fun clear() {
-        _state.value = _state.value.copy(entries = emptyList(), filteredEntries = emptyList())
+        processManager.clearLogs()
+        _state.value =
+            _state.value.copy(
+                entries = emptyList(),
+                filteredEntries = emptyList(),
+                sourceAvailable = false,
+            )
     }
 
     private fun applyFilters() {
@@ -300,7 +319,11 @@ class LogsScreen : Screen {
                         options = options,
                         searchable = options.size >= 10,
                         onSelect = { sel -> model.setServiceFilter(if (sel == allLabel) null else sel) },
-                        modifier = Modifier.widthIn(min = 180.dp, max = 260.dp),
+                        modifier =
+                            Modifier.widthIn(
+                                min = LogLayoutDimensions.serviceFilterMinWidth,
+                                max = LogLayoutDimensions.serviceFilterMaxWidth,
+                            ),
                         contentDescription = "Filter by tunnel",
                     )
                 }
@@ -310,7 +333,13 @@ class LogsScreen : Screen {
                     query = state.searchQuery,
                     onQueryChange = model::setSearch,
                     placeholder = "Search logs...",
-                    modifier = Modifier.weight(1f).widthIn(min = 160.dp, max = 480.dp),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .widthIn(
+                                min = LogLayoutDimensions.searchMinWidth,
+                                max = LogLayoutDimensions.searchMaxWidth,
+                            ),
                 )
 
                 // Auto-scroll toggle
@@ -329,7 +358,7 @@ class LogsScreen : Screen {
                     type = SaaSButtonType.SECONDARY,
                 )
             }
-            Spacer(Modifier.height(Spacing.md))
+            Spacer(Modifier.height(Spacing.sm))
 
             // Log viewer
             Box(
@@ -338,7 +367,7 @@ class LogsScreen : Screen {
                     .weight(1f)
                     .clip(RoundedCornerShape(GostRadius.lg))
                     .background(terminalPalette.background)
-                    .border(1.dp, sc.borderSubtle, RoundedCornerShape(GostRadius.lg))
+                    .border(GostControlSize.borderWidth, sc.borderSubtle, RoundedCornerShape(GostRadius.lg))
                     .padding(Spacing.sm),
             ) {
                 if (!state.sourceAvailable && state.entries.isEmpty()) {
@@ -351,15 +380,19 @@ class LogsScreen : Screen {
                             Icons.Default.Terminal,
                             contentDescription = "Logs unavailable",
                             tint = terminalPalette.onSurfaceMuted,
-                            modifier = Modifier.size(36.dp),
+                            modifier = Modifier.size(LogLayoutDimensions.emptyIcon),
                         )
-                        Spacer(Modifier.height(Spacing.md))
-                        Text("No logs yet", color = terminalPalette.onSurfaceMuted, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Spacer(Modifier.height(Spacing.sm))
+                        Text(
+                            "No logs yet",
+                            color = terminalPalette.onSurfaceMuted,
+                            style = GostTextStyles.sectionTitle.copy(fontWeight = FontWeight.Medium),
+                        )
                         Spacer(Modifier.height(Spacing.xs))
                         Text(
                             "Logs will appear here when local GOST tunnels emit output.",
                             color = terminalPalette.onSurfaceDim,
-                            fontSize = 12.sp,
+                            style = GostTextStyles.bodyCompact,
                         )
                     }
                 } else if (state.filteredEntries.isEmpty() && state.entries.isNotEmpty()) {
@@ -371,7 +404,7 @@ class LogsScreen : Screen {
                         Text(
                             "No logs match current filters",
                             color = terminalPalette.onSurfaceMuted,
-                            fontSize = 13.sp,
+                            style = GostTextStyles.navItem,
                         )
                     }
                 } else {
@@ -419,26 +452,30 @@ private fun LogLine(
             color = palette.onSurfaceDim,
             style = GostTextStyles.logLine,
             fontFamily = MonoFontFamily,
-            modifier = Modifier.width(90.dp),
+            modifier = Modifier.width(LogLayoutDimensions.timestampWidth),
         )
         Spacer(Modifier.width(Spacing.xs))
-        Box(Modifier.width(44.dp)) {
+        Box(Modifier.width(LogLayoutDimensions.levelWidth)) {
             Text(
                 entry.level.uppercase(),
                 color = levelColor,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
+                style = GostTextStyles.microLabel.copy(fontWeight = FontWeight.Bold),
                 fontFamily = MonoFontFamily,
             )
         }
         if (entry.service != null) {
             Box(
                 Modifier
-                    .clip(RoundedCornerShape(Spacing.xs))
+                    .clip(RoundedCornerShape(GostRadius.xs))
                     .background(Teal400.copy(alpha = 0.18f))
                     .padding(horizontal = Spacing.xs),
             ) {
-                Text(entry.service, color = Teal300, fontSize = 10.sp, fontFamily = MonoFontFamily)
+                Text(
+                    entry.service,
+                    color = Teal300,
+                    style = GostTextStyles.microLabel,
+                    fontFamily = MonoFontFamily,
+                )
             }
             Spacer(Modifier.width(Spacing.xs))
         }

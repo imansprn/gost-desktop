@@ -36,6 +36,16 @@ data class SidebarItem(
     val badge: String? = null,
 )
 
+private object SidebarDimensions {
+    val logoCollapsed = 44.dp
+    val logoExpanded = 56.dp
+    val logoHorizontalCollapsed = 10.dp
+    val logoVerticalPadding = 20.dp
+    val navVerticalPadding = 10.dp
+    val statusDot = 6.dp
+    val selectedStripe = 3.dp
+}
+
 /**
  * Sidebar navigation for the GOST Desktop app shell.
  */
@@ -47,18 +57,23 @@ fun Sidebar(
     collapsed: Boolean,
     connectionName: String?,
     isRuntimeValid: Boolean,
+    isEngineRunning: Boolean,
     gostVersion: String?,
     onItemSelected: (String) -> Unit,
     onToggleCollapse: () -> Unit,
     onDisconnect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val sidebarWidth by animateDpAsState(if (collapsed) 64.dp else 240.dp)
+    val sidebarWidth by
+        animateDpAsState(
+            if (collapsed) GostLayoutSize.sidebarCollapsed else GostLayoutSize.sidebarExpanded,
+        )
     val cs = MaterialTheme.colorScheme
     val sc = GostSemantics.colors
     val lightShell = cs.background.luminance() > 0.5f
-    val logoSize = if (collapsed) 44.dp else 56.dp
-    val logoRowHorizontalPadding = if (collapsed) 10.dp else 16.dp
+    val logoSize = if (collapsed) SidebarDimensions.logoCollapsed else SidebarDimensions.logoExpanded
+    val logoRowHorizontalPadding =
+        if (collapsed) SidebarDimensions.logoHorizontalCollapsed else Spacing.xl
 
     Column(
         modifier =
@@ -66,15 +81,22 @@ fun Sidebar(
                 .width(sidebarWidth)
                 .fillMaxHeight()
                 .background(sc.surfacePanel)
-                .border(width = 1.dp, color = sc.borderSubtle, shape = RoundedCornerShape(0.dp))
-                .padding(vertical = Spacing.md),
+                .border(
+                    width = GostControlSize.borderWidth,
+                    color = sc.borderSubtle,
+                    shape = RoundedCornerShape(0.dp),
+                )
+                .padding(vertical = Spacing.sm),
     ) {
         // ── Logo / Brand ──
         Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = logoRowHorizontalPadding, vertical = 20.dp),
+                    .padding(
+                        horizontal = logoRowHorizontalPadding,
+                        vertical = SidebarDimensions.logoVerticalPadding,
+                    ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Image(
@@ -88,19 +110,18 @@ fun Sidebar(
             )
 
             if (!collapsed) {
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(Spacing.lg))
                 Column {
                     Text(
                         text = "GOST Desktop",
                         color = sc.textPrimary,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = GostTextStyles.sectionTitle.copy(fontWeight = FontWeight.Bold),
                     )
                     if (gostVersion != null) {
                         Text(
                             text = "v$gostVersion",
                             color = sc.textSecondary,
-                            fontSize = 11.sp,
+                            style = MaterialTheme.typography.labelSmall,
                         )
                     }
                 }
@@ -113,14 +134,15 @@ fun Sidebar(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                        .padding(horizontal = Spacing.lg, vertical = Spacing.sm)
                         .clip(RoundedCornerShape(GostRadius.sm))
                         .border(
-                            width = 1.dp,
+                            width = GostControlSize.borderWidth,
                             color = sc.borderSubtle,
                             shape = RoundedCornerShape(GostRadius.sm),
-                        ).background(sc.surfaceInput)
-                        .padding(horizontal = Spacing.md, vertical = Spacing.md),
+                        )
+                        .background(sc.surfaceInput)
+                        .padding(horizontal = Spacing.sm, vertical = Spacing.sm),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -129,61 +151,49 @@ fun Sidebar(
                         Box(
                             modifier =
                                 Modifier
-                                    .size(6.dp)
+                                    .size(SidebarDimensions.statusDot)
                                     .clip(CircleShape)
-                                    .background(if (isRuntimeValid) sc.statusSuccess else sc.statusError),
+                                    .background(
+                                when {
+                                    !isRuntimeValid -> sc.statusError
+                                    isEngineRunning -> sc.statusSuccess
+                                    else -> sc.textMuted
+                                },
+                            ),
                         )
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width(Spacing.xs))
                         Text(
                             text = "RUNTIME",
                             color = sc.focusRing,
                             style = GostTextStyles.superTitle,
                         )
                     }
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(Spacing.xs))
                     Text(
-                        text = if (isRuntimeValid) "GOST Active" else "Disconnected",
+                        text =
+                            when {
+                                !isRuntimeValid -> "Runtime unavailable"
+                                isEngineRunning -> "Engine active"
+                                else -> "Engine stopped"
+                            },
                         color = sc.textPrimary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = GostTextStyles.navItem.copy(fontWeight = FontWeight.Bold),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
 
-                // Visual switch pill
-                Box(
-                    modifier =
-                        Modifier
-                            .height(24.dp)
-                            .width(42.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (isRuntimeValid) {
-                                    sc.statusSuccess.copy(alpha = 0.2f)
-                                } else {
-                                    sc.borderStrong.copy(alpha = 0.25f)
-                                },
-                            ).padding(horizontal = 2.dp),
-                    contentAlignment = if (isRuntimeValid) Alignment.CenterEnd else Alignment.CenterStart,
-                ) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .size(20.dp)
-                                .clip(CircleShape)
-                                .background(if (isRuntimeValid) sc.statusSuccess else sc.textMuted),
-                    )
-                }
+                // Compact engine state indicator.
+                SaaSCompactSwitch(checked = isEngineRunning)
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(Spacing.sm))
         }
 
         HorizontalDivider(
             color = sc.borderSubtle,
-            modifier = Modifier.padding(horizontal = 16.dp),
+            modifier = Modifier.padding(horizontal = Spacing.xl),
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(Spacing.sm))
 
         // ── Nav items ──
         Column(
@@ -203,16 +213,26 @@ fun Sidebar(
             }
         }
 
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(Spacing.xs))
 
         if (isRuntimeValid) {
             SidebarNavItem(
-                item = SidebarItem("disconnect", "Stop Engine", androidx.compose.material.icons.Icons.Default.PowerSettingsNew),
+                item =
+                    SidebarItem(
+                        "disconnect",
+                        if (isEngineRunning) "Stop Engine" else "Start Engine",
+                        androidx.compose.material.icons.Icons.Default.PowerSettingsNew,
+                    ),
                 isSelected = false,
                 isCollapsed = collapsed,
                 lightShell = lightShell,
                 onClick = onDisconnect,
-                tint = if (lightShell) Rose500 else AmberStatus,
+                tint =
+                    if (isEngineRunning) {
+                        if (lightShell) Rose500 else AmberStatus
+                    } else {
+                        sc.statusSuccess
+                    },
             )
         }
 
@@ -257,7 +277,7 @@ private fun SidebarNavItem(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 4.dp)
+                .padding(horizontal = Spacing.lg, vertical = Spacing.xs)
                 .clip(RoundedCornerShape(GostRadius.sm))
                 .clickable {
                     onClick()
@@ -272,7 +292,7 @@ private fun SidebarNavItem(
                             topLeft = androidx.compose.ui.geometry.Offset.Zero,
                             size =
                                 androidx.compose.ui.geometry
-                                    .Size(3.dp.toPx(), size.height),
+                                    .Size(SidebarDimensions.selectedStripe.toPx(), size.height),
                         )
                     }
                 },
@@ -282,18 +302,21 @@ private fun SidebarNavItem(
                 Modifier
                     .fillMaxWidth()
                     .background(bgColor)
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                    .padding(
+                        horizontal = Spacing.lg,
+                        vertical = SidebarDimensions.navVerticalPadding,
+                    ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = item.icon,
                 contentDescription = item.label,
                 tint = textColor, // Icon matches text exactly per hover/active state
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(GostControlSize.iconLarge),
             )
 
             if (!isCollapsed) {
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(Spacing.lg))
 
                 val textShadow =
                     if (isSelected && !lightShell) {
@@ -318,7 +341,7 @@ private fun SidebarNavItem(
                 )
 
                 if (item.badge != null) {
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(Spacing.sm))
                     Box(
                         modifier =
                             Modifier
@@ -334,8 +357,7 @@ private fun SidebarNavItem(
                         Text(
                             text = item.badge,
                             color = if (lightShell) cs.primary else Cyan300,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Medium,
+                            style = GostTextStyles.microLabel,
                         )
                     }
                 }

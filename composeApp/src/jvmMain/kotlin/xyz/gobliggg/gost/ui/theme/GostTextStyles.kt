@@ -68,11 +68,54 @@ object GostTextStyles {
                 fontWeight = FontWeight.Bold,
             )
 
+    val statLabel: TextStyle
+        @Composable get() =
+            MaterialTheme.typography.labelMedium.copy(
+                letterSpacing = 0.5.sp,
+            )
+
     /** Monospace log line text. */
     val logLine: TextStyle
         @Composable get() =
             MaterialTheme.typography.bodySmall.copy(
                 fontSize = 11.sp,
+            )
+
+    val bodyCompact: TextStyle
+        @Composable get() =
+            MaterialTheme.typography.bodySmall.copy(
+                fontSize = 12.sp,
+                lineHeight = 18.sp,
+            )
+
+    val rowTitle: TextStyle
+        @Composable get() =
+            MaterialTheme.typography.bodyMedium.copy(
+                fontSize = 15.sp,
+                lineHeight = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+
+    val rowSubtitle: TextStyle
+        @Composable get() =
+            MaterialTheme.typography.bodySmall.copy(
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+            )
+
+    val microLabel: TextStyle
+        @Composable get() =
+            MaterialTheme.typography.labelSmall.copy(
+                fontSize = 10.sp,
+                lineHeight = 14.sp,
+                fontWeight = FontWeight.Medium,
+            )
+
+    val code: TextStyle
+        @Composable get() =
+            MaterialTheme.typography.bodySmall.copy(
+                fontSize = 12.sp,
+                lineHeight = 18.sp,
             )
 
     /** Tiny watermark text in sidebar footer. */

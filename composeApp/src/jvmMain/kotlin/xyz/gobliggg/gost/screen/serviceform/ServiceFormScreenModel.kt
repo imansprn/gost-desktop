@@ -84,6 +84,7 @@ data class ServiceFormUiState(
     val isSubmitting: Boolean = false,
     val errorMessage: String? = null,
     val isDirty: Boolean = false,
+    val draftRecovered: Boolean = false,
 )
 
 class ServiceFormScreenModel(
@@ -102,7 +103,7 @@ class ServiceFormScreenModel(
         if (editName == null) {
             wizardDraftStore.load()?.let { draft ->
                 applyLoadedDraft(draft)
-                _state.value = _state.value.copy(currentStep = 0)
+                _state.value = _state.value.copy(draftRecovered = true)
             }
         }
         loadDropdowns()
@@ -130,6 +131,23 @@ class ServiceFormScreenModel(
                 tlsKeyFile = d.tlsKeyFile,
                 tlsCaFile = d.tlsCaFile,
                 isDirty = true,
+            )
+    }
+
+    fun resumeRecoveredDraft() {
+        _state.value = _state.value.copy(draftRecovered = false)
+    }
+
+    fun startFreshDraft() {
+        wizardDraftStore.clear()
+        val s = _state.value
+        _state.value =
+            ServiceFormUiState(
+                availableChains = s.availableChains,
+                availableAuthers = s.availableAuthers,
+                availableBypasses = s.availableBypasses,
+                availableAdmissions = s.availableAdmissions,
+                availableLimiters = s.availableLimiters,
             )
     }
 
@@ -161,11 +179,11 @@ class ServiceFormScreenModel(
     }
 
     private fun loadDropdowns() {
-        val chains = configBuilder.listTemplates("chains")
-        val authers = configBuilder.listTemplates("authers")
-        val bypasses = configBuilder.listTemplates("bypass")
-        val admissions = configBuilder.listTemplates("admission")
-        val limiters = configBuilder.listTemplates("limiters")
+        val chains = configBuilder.listTemplates(TemplateTypes.CHAINS)
+        val authers = configBuilder.listTemplates(TemplateTypes.AUTHERS)
+        val bypasses = configBuilder.listTemplates(TemplateTypes.BYPASSES)
+        val admissions = configBuilder.listTemplates(TemplateTypes.ADMISSIONS)
+        val limiters = configBuilder.listTemplates(TemplateTypes.LIMITERS)
 
         _state.value =
             _state.value.copy(
@@ -339,29 +357,66 @@ class ServiceFormScreenModel(
         _state.value = s.copy(metadata = list, isDirty = true)
     }
 
+    private fun validateBasics(): Boolean {
+        val s = _state.value
+        val nameError =
+            when {
+                s.name.isBlank() -> "Name is required"
+                !configBuilder.isValidName(s.name) ->
+                    "Use only letters, numbers, underscore, and hyphen"
+                serviceRegistry.getService(s.name) != null && s.name != editName ->
+                    "A tunnel named '${s.name}' already exists"
+                else -> null
+            }
+        val addrError =
+            when {
+                s.addr.isBlank() -> "Listen address is required"
+                s.addr.any { it.isWhitespace() } -> "Listen address cannot contain spaces"
+                else -> null
+            }
+        _state.value = s.copy(nameError = nameError, addrError = addrError)
+        return nameError == null && addrError == null
+    }
+
     fun nextStep(): Boolean {
         val s = _state.value
-        when (s.currentStep) {
-            0 -> {
-                var valid = true
-                var ne: String? = null
-                var ae: String? = null
-                if (s.name.isBlank() || s.name.contains("\\s".toRegex())) {
-                    ne = "Required, no spaces"
-                    valid = false
-                }
-                if (s.addr.isBlank()) {
-                    ae = "Required"
-                    valid = false
-                }
-                if (!valid) {
-                    _state.value = s.copy(nameError = ne, addrError = ae)
-                    return false
-                }
-            }
-        }
+        if (s.currentStep == 0 && !validateBasics()) return false
         _state.value = _state.value.copy(currentStep = (s.currentStep + 1).coerceAtMost(2))
         return true
+    }
+
+    private fun validateBeforeSave(): String? {
+        if (!validateBasics()) return "Fix the highlighted fields before saving."
+        val s = _state.value
+
+        val references =
+            listOf(
+                Triple("Chain", TemplateTypes.CHAINS, s.chainRef),
+                Triple("Auther", TemplateTypes.AUTHERS, s.autherRef),
+                Triple("Bypass", TemplateTypes.BYPASSES, s.bypassRef),
+                Triple("Admission", TemplateTypes.ADMISSIONS, s.admissionRef),
+                Triple("Limiter", TemplateTypes.LIMITERS, s.limiterRef),
+            )
+        references.forEach { (label, type, ref) ->
+            if (ref != null && !configBuilder.templateExists(type, ref)) {
+                return "$label '$ref' no longer exists."
+            }
+        }
+
+        val metadataKeys = s.metadata.map { it.first.trim() }.filter { it.isNotBlank() }
+        if (metadataKeys.size != metadataKeys.distinct().size) {
+            return "Metadata keys must be unique."
+        }
+        if (s.forwarderNodes.any { (name, addr) -> name.isBlank() != addr.isBlank() }) {
+            return "Forwarder rows must include both name and address."
+        }
+        if (s.authUsername.isBlank() && s.authPassword.isNotBlank()) {
+            return "Username is required when a password is provided."
+        }
+        if (s.tlsCertFile.isBlank() != s.tlsKeyFile.isBlank()) {
+            return "TLS certificate and key must be provided together."
+        }
+        return null
     }
 
     fun prevStep() {
@@ -522,11 +577,11 @@ class ServiceFormScreenModel(
             }
         }
 
-        attachTemplate("chains", s.chainRef, "chains")
-        attachTemplate("authers", s.autherRef, "authers")
-        attachTemplate("bypass", s.bypassRef, "bypasses")
-        attachTemplate("admission", s.admissionRef, "admissions")
-        attachTemplate("limiters", s.limiterRef, "limiters")
+        attachTemplate(TemplateTypes.CHAINS, s.chainRef, "chains")
+        attachTemplate(TemplateTypes.AUTHERS, s.autherRef, "authers")
+        attachTemplate(TemplateTypes.BYPASSES, s.bypassRef, "bypasses")
+        attachTemplate(TemplateTypes.ADMISSIONS, s.admissionRef, "admissions")
+        attachTemplate(TemplateTypes.LIMITERS, s.limiterRef, "limiters")
 
         return buildJsonObject {
             put("services", buildJsonArray { add(service) })
@@ -537,16 +592,24 @@ class ServiceFormScreenModel(
     }
 
     fun save(onSuccess: () -> Unit) {
+        val validationError = validateBeforeSave()
+        if (validationError != null) {
+            _state.value = _state.value.copy(isSubmitting = false, errorMessage = validationError)
+            return
+        }
+
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
         try {
-            val configContent = buildPreviewJson()
-            val id = _state.value.name // id is just the name chosen by user
+            val id = _state.value.name
+            val previous = editName?.let { serviceRegistry.getService(it) }
+            val wasRunning = previous?.status == ServiceStatus.RUNNING
+            val desiredRunning = previous?.desiredRunning ?: false
 
+            val configContent = buildPreviewJson()
             val path = configBuilder.buildServiceConfig(id, configContent)
 
-            // If we are editing, stop the old process and handle renames
             if (editName != null) {
-                processManager.stopService(editName)
+                processManager.stopService(editName, preserveIntent = true)
                 if (editName != id) {
                     serviceRegistry.removeService(editName)
                     configBuilder.deleteServiceConfig(editName)
@@ -559,16 +622,25 @@ class ServiceFormScreenModel(
                     name = id,
                     addr = _state.value.addr,
                     configPath = path,
-                    status = ServiceStatus.IDLE, // starts idle, must be explicitly started
+                    status = ServiceStatus.IDLE,
+                    desiredRunning = desiredRunning,
                 ),
             )
 
+            if (wasRunning && AppState.isEngineRunning.value) {
+                processManager.startService(id, recordIntent = false)
+            }
+
             if (editName == null) wizardDraftStore.clear()
-            _state.value = _state.value.copy(isSubmitting = false)
+            _state.value = _state.value.copy(isSubmitting = false, isDirty = false)
             ShellFeedback.showSnackbar(if (editName != null) "Tunnel updated" else "Tunnel created")
             onSuccess()
         } catch (e: Exception) {
-            _state.value = _state.value.copy(isSubmitting = false, errorMessage = e.message)
+            _state.value =
+                _state.value.copy(
+                    isSubmitting = false,
+                    errorMessage = e.message ?: "Failed to save tunnel",
+                )
         }
     }
 }
