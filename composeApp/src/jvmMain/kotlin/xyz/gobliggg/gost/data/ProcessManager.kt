@@ -75,6 +75,11 @@ class ProcessManager(
         if (recordIntent) {
             serviceRegistry.updateDesiredRunning(serviceId, true)
         }
+        serviceRegistry.updateServiceStatus(
+            serviceId,
+            ServiceStatus.STARTING,
+            errorMessage = null,
+        )
 
         val runtime = AppState.settings.value.gostRuntime
         if (runtime.binaryPath.isBlank()) {
@@ -156,9 +161,14 @@ class ProcessManager(
         if (!preserveIntent) {
             serviceRegistry.updateDesiredRunning(serviceId, false)
         }
-        serviceRegistry.updateServiceStatus(serviceId, ServiceStatus.IDLE)
 
         if (process != null && process.isAlive) {
+            serviceRegistry.updateServiceStatus(
+                serviceId,
+                ServiceStatus.STOPPING,
+                pid = process.pid(),
+                errorMessage = null,
+            )
             process.destroy()
             if (!process.waitFor(1_500, TimeUnit.MILLISECONDS)) {
                 process.destroyForcibly()
@@ -166,10 +176,22 @@ class ProcessManager(
             }
         }
         logJobs.remove(serviceId)?.cancel()
+        serviceRegistry.updateServiceStatus(serviceId, ServiceStatus.IDLE)
     }
 
     fun stopAll(preserveIntent: Boolean = false) {
-        processes.keys.toList().forEach { id ->
+        val ids =
+            (
+                processes.keys +
+                    serviceRegistry.services.value
+                        .filter {
+                            it.status == ServiceStatus.STARTING ||
+                                it.status == ServiceStatus.RUNNING ||
+                                it.status == ServiceStatus.STOPPING
+                        }.map { it.id }
+            ).distinct()
+
+        ids.forEach { id ->
             stopService(id, preserveIntent = preserveIntent)
         }
     }

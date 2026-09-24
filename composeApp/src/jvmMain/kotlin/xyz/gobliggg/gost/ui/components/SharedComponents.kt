@@ -159,16 +159,20 @@ fun ServiceStatusPill(
 ) {
     val (label, icon) =
         when (status) {
-            ServiceStatus.RUNNING -> "Running" to Icons.Default.CheckCircle
             ServiceStatus.IDLE -> "Stopped" to Icons.Default.PauseCircle
+            ServiceStatus.STARTING -> "Starting" to Icons.Default.PlayCircle
+            ServiceStatus.RUNNING -> "Running" to Icons.Default.CheckCircle
+            ServiceStatus.STOPPING -> "Stopping" to Icons.Default.StopCircle
             ServiceStatus.ERROR -> "Error" to Icons.Default.Error
         }
 
     val sc = GostSemantics.colors
     val (bg, fg) =
         when (status) {
-            ServiceStatus.RUNNING -> sc.statusSuccessContainer to sc.statusSuccess
             ServiceStatus.IDLE -> GlassWhite to MaterialTheme.colorScheme.onSurfaceVariant
+            ServiceStatus.STARTING -> sc.statusInfoContainer to sc.statusInfo
+            ServiceStatus.RUNNING -> sc.statusSuccessContainer to sc.statusSuccess
+            ServiceStatus.STOPPING -> sc.statusWarningContainer to sc.statusWarning
             ServiceStatus.ERROR -> sc.statusErrorContainer to sc.statusError
         }
 

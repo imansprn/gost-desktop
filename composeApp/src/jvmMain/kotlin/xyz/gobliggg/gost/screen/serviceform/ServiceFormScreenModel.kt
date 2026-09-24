@@ -440,18 +440,38 @@ class ServiceFormScreenModel(
         onDone: (String?) -> Unit,
     ) {
         val name = ch.name
-        if (name.isNullOrBlank()) {
-            onDone("Chain name is required")
+        val validationError =
+            when {
+                name.isNullOrBlank() -> "Chain name is required"
+                !configBuilder.isValidName(name) ->
+                    "Use only letters, numbers, underscore, and hyphen for the chain name."
+                configBuilder.templateExists(TemplateTypes.CHAINS, name) ->
+                    "A chain named '$name' already exists."
+                else -> null
+            }
+
+        if (validationError != null) {
+            _state.value = _state.value.copy(errorMessage = validationError)
+            onDone(validationError)
             return
         }
+
+        val safeName = requireNotNull(name)
         try {
             val content = json.encodeToString(ch)
-            configBuilder.saveTemplate("chains", name, content)
+            configBuilder.saveTemplate(TemplateTypes.CHAINS, safeName, content)
             loadDropdowns()
-            _state.value = _state.value.copy(chainRef = name, isDirty = true)
+            _state.value =
+                _state.value.copy(
+                    chainRef = safeName,
+                    isDirty = true,
+                    errorMessage = null,
+                )
             onDone(null)
         } catch (e: Exception) {
-            onDone(e.message ?: "Failed to save chain")
+            val message = e.message ?: "Failed to save chain"
+            _state.value = _state.value.copy(errorMessage = message)
+            onDone(message)
         }
     }
 
@@ -599,24 +619,23 @@ class ServiceFormScreenModel(
         }
 
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
-        try {
-            val id = _state.value.name
-            val previous = editName?.let { serviceRegistry.getService(it) }
-            val wasRunning = previous?.status == ServiceStatus.RUNNING
-            val desiredRunning = previous?.desiredRunning ?: false
+        val id = _state.value.name
+        val previous = editName?.let { serviceRegistry.getService(it) }
+        val previousConfig = editName?.let { configBuilder.readServiceConfig(it) }
+        val wasRunning = previous?.status == ServiceStatus.RUNNING
+        val desiredRunning = previous?.desiredRunning ?: false
+        val isRename = editName != null && editName != id
+        var registryUpdated = false
 
+        try {
             val configContent = buildPreviewJson()
             val path = configBuilder.buildServiceConfig(id, configContent)
 
             if (editName != null) {
                 processManager.stopService(editName, preserveIntent = true)
-                if (editName != id) {
-                    serviceRegistry.removeService(editName)
-                    configBuilder.deleteServiceConfig(editName)
-                }
             }
 
-            serviceRegistry.addOrUpdateService(
+            val entity =
                 ServiceEntity(
                     id = id,
                     name = id,
@@ -624,8 +643,22 @@ class ServiceFormScreenModel(
                     configPath = path,
                     status = ServiceStatus.IDLE,
                     desiredRunning = desiredRunning,
-                ),
-            )
+                )
+            if (!serviceRegistry.replaceService(editName, entity)) {
+                throw IllegalStateException("Failed to persist tunnel registry")
+            }
+            registryUpdated = true
+
+            if (isRename) {
+                try {
+                    configBuilder.deleteServiceConfig(requireNotNull(editName))
+                } catch (cleanupError: Exception) {
+                    AppState.reportPersistenceIssue(
+                        "Tunnel was renamed, but the old config could not be removed: " +
+                            (cleanupError.message ?: "unknown filesystem error"),
+                    )
+                }
+            }
 
             if (wasRunning && AppState.isEngineRunning.value) {
                 processManager.startService(id, recordIntent = false)
@@ -636,6 +669,23 @@ class ServiceFormScreenModel(
             ShellFeedback.showSnackbar(if (editName != null) "Tunnel updated" else "Tunnel created")
             onSuccess()
         } catch (e: Exception) {
+            if (!registryUpdated) {
+                runCatching {
+                    when {
+                        editName == null || isRename -> configBuilder.deleteServiceConfig(id)
+                        previousConfig != null -> configBuilder.buildServiceConfig(id, previousConfig)
+                    }
+                }.onFailure { rollbackError ->
+                    AppState.reportPersistenceIssue(
+                        "Failed to roll back tunnel config after save error: " +
+                            (rollbackError.message ?: "unknown filesystem error"),
+                    )
+                }
+                if (wasRunning && AppState.isEngineRunning.value) {
+                    processManager.startService(requireNotNull(editName), recordIntent = false)
+                }
+            }
+
             _state.value =
                 _state.value.copy(
                     isSubmitting = false,

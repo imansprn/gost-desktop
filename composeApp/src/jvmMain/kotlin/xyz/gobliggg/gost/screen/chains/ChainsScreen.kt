@@ -40,6 +40,8 @@ class ChainsScreen(
         var templates by remember { mutableStateOf(ConfigBuilder.default().listTemplates(TemplateTypes.CHAINS)) }
         var selectedTemplate by remember { mutableStateOf<String?>(null) }
         var editingChain by remember { mutableStateOf<ChainDto?>(null) }
+        var repairContent by remember { mutableStateOf("") }
+        var repairError by remember { mutableStateOf<String?>(null) }
         var isDirty by remember { mutableStateOf(false) }
         var showCreateDialog by remember { mutableStateOf(false) }
         var newChainName by remember { mutableStateOf("") }
@@ -86,19 +88,38 @@ class ChainsScreen(
             }
         }
 
-        LaunchedEffect(selectedTemplate) {
-            if (selectedTemplate != null) {
-                val content = ConfigBuilder.default().readTemplate(TemplateTypes.CHAINS, selectedTemplate!!)
-                editingChain =
-                    try {
-                        if (content != null) json.decodeFromString<ChainDto>(content) else null
-                    } catch (e: Exception) {
-                        null
-                    }
-            } else {
+        fun loadSelectedChain(name: String?) {
+            if (name == null) {
                 editingChain = null
+                repairContent = ""
+                repairError = null
+                isDirty = false
+                return
+            }
+
+            val content = ConfigBuilder.default().readTemplate(TemplateTypes.CHAINS, name)
+            if (content == null) {
+                editingChain = null
+                repairContent = ""
+                repairError = "Chain template could not be read from disk."
+                isDirty = false
+                return
+            }
+
+            try {
+                editingChain = json.decodeFromString<ChainDto>(content)
+                repairContent = ""
+                repairError = null
+            } catch (e: Exception) {
+                editingChain = null
+                repairContent = content
+                repairError = "Invalid chain JSON: ${e.message ?: "Unable to parse template"}"
             }
             isDirty = false
+        }
+
+        LaunchedEffect(selectedTemplate) {
+            loadSelectedChain(selectedTemplate)
         }
 
         fun requestCreateChain() {
@@ -208,11 +229,7 @@ class ChainsScreen(
                                     if (isDirty) {
                                         SaaSButton(
                                             text = "Discard",
-                                            onClick = {
-                                                val old = selectedTemplate
-                                                selectedTemplate = null
-                                                selectedTemplate = old
-                                            },
+                                            onClick = { loadSelectedChain(selectedTemplate) },
                                             type = SaaSButtonType.SECONDARY,
                                         )
                                     }
@@ -276,6 +293,76 @@ class ChainsScreen(
                                     isDirty = true
                                 },
                             )
+                        } else if (selectedTemplate != null && repairContent.isNotBlank()) {
+                            Text(
+                                text = selectedTemplate!!,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = sc.textPrimary,
+                            )
+                            Spacer(Modifier.height(Spacing.sm))
+                            Banner(
+                                repairError ?: "This chain contains invalid JSON.",
+                                type = BannerType.Error,
+                            )
+                            Spacer(Modifier.height(Spacing.lg))
+                            SaaSTextField(
+                                value = repairContent,
+                                onValueChange = {
+                                    repairContent = it
+                                    repairError = null
+                                    isDirty = true
+                                },
+                                label = "Repair Chain JSON",
+                                singleLine = false,
+                                modifier = Modifier.fillMaxWidth().weight(1f),
+                            )
+                            Spacer(Modifier.height(Spacing.lg))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                            ) {
+                                if (isDirty) {
+                                    SaaSButton(
+                                        text = "Discard",
+                                        onClick = { loadSelectedChain(selectedTemplate) },
+                                        type = SaaSButtonType.SECONDARY,
+                                    )
+                                    Spacer(Modifier.width(Spacing.sm))
+                                }
+                                SaaSButton(
+                                    text = "Save Repair",
+                                    onClick = {
+                                        try {
+                                            val parsed = json.decodeFromString<ChainDto>(repairContent)
+                                            val expectedName = selectedTemplate!!
+                                            if (parsed.name != expectedName) {
+                                                throw IllegalArgumentException(
+                                                    "Repaired JSON name must remain '$expectedName'.",
+                                                )
+                                            }
+                                            ConfigBuilder.default().saveTemplate(
+                                                TemplateTypes.CHAINS,
+                                                expectedName,
+                                                repairContent,
+                                            )
+                                            TemplateRuntimeSynchronizer
+                                                .synchronize(TemplateTypes.CHAINS, expectedName)
+                                                .getOrThrow()
+                                            editingChain = parsed
+                                            repairContent = ""
+                                            repairError = null
+                                            isDirty = false
+                                            reload()
+                                            ShellFeedback.showSnackbar("Chain JSON repaired")
+                                        } catch (e: Exception) {
+                                            repairError = e.message ?: "Invalid chain JSON"
+                                        }
+                                    },
+                                    enabled = repairContent.isNotBlank(),
+                                    type = SaaSButtonType.ACTION,
+                                )
+                            }
                         } else {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                 EmptyState(

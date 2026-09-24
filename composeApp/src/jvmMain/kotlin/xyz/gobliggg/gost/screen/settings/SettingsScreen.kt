@@ -21,6 +21,7 @@ class SettingsScreen : Screen {
     @Composable
     override fun Content() {
         val settings by AppState.settings.collectAsState()
+        val engineTransition by AppState.engineTransition.collectAsState()
         val sc = GostSemantics.colors
 
         ScreenScaffold(
@@ -131,6 +132,13 @@ class SettingsScreen : Screen {
                 SaaSInfoRow("Binary Path", settings.gostRuntime.binaryPath.ifBlank { "(not set)" })
                 SaaSInfoRow("Working Directory", settings.gostRuntime.workingDirectory.ifBlank { "(default)" })
                 SaaSInfoRow("Auto-start", if (settings.gostRuntime.autoStart) "Yes" else "No")
+                Spacer(Modifier.height(Spacing.lg))
+                SaaSButton(
+                    text = "Reconfigure Runtime",
+                    onClick = AppState::beginRuntimeReconfiguration,
+                    enabled = engineTransition == null,
+                    type = SaaSButtonType.SECONDARY,
+                )
             }
 
             HorizontalDivider(

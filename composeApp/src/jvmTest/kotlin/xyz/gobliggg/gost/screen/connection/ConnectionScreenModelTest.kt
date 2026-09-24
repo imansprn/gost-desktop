@@ -44,8 +44,25 @@ class ConnectionScreenModelTest {
         // Initial state depends on AppState, wait for detection
         testScheduler.advanceUntilIdle()
         
-        model.updateWorkingDirectory("/tmp/work")
-        assertEquals("/tmp/work", model.state.value.workingDirectory)
+        val validWorkDir =
+            java.io.File(
+                System.getProperty("java.io.tmpdir"),
+                "gost-work-${java.util.UUID.randomUUID()}",
+            ).apply { mkdirs() }
+        model.updateWorkingDirectory(validWorkDir.absolutePath)
+        assertEquals(validWorkDir.absolutePath, model.state.value.workingDirectory)
+        assertNull(model.state.value.workingDirectoryError)
+
+        model.updateWorkingDirectory("/non-existent-workdir-${java.util.UUID.randomUUID()}")
+        assertEquals("Directory does not exist", model.state.value.workingDirectoryError)
+
+        val ordinaryFile =
+            java.io.File.createTempFile("gost-work-file", ".tmp")
+        model.updateWorkingDirectory(ordinaryFile.absolutePath)
+        assertEquals("Path is not a directory", model.state.value.workingDirectoryError)
+
+        model.updateWorkingDirectory(validWorkDir.absolutePath)
+        assertNull(model.state.value.workingDirectoryError)
         
         model.updateAutoStart(true)
         assertTrue(model.state.value.autoStart)

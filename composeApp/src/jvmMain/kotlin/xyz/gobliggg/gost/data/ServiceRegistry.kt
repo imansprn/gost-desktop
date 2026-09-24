@@ -13,7 +13,9 @@ import java.nio.file.StandardCopyOption
 @Serializable
 enum class ServiceStatus {
     IDLE,
+    STARTING,
     RUNNING,
+    STOPPING,
     ERROR,
 }
 
@@ -56,6 +58,8 @@ class ServiceRegistry(
         if (!servicesFile.parentFile.exists()) {
             servicesFile.parentFile.mkdirs()
         }
+        servicesFile.parentFile.restrictToOwner()
+        if (servicesFile.exists()) servicesFile.restrictToOwner()
         load()
     }
 
@@ -88,14 +92,36 @@ class ServiceRegistry(
                     }
             }
         } catch (e: Exception) {
-            println("Failed to load services: ${e.message}")
+            val backup =
+                File(
+                    servicesFile.parentFile,
+                    "services.corrupt-${System.currentTimeMillis()}.json",
+                )
+            val backedUp = runCatching { servicesFile.renameTo(backup) }.getOrDefault(false)
+            _services.value = emptyList()
+            AppState.reportPersistenceIssue(
+                if (backedUp) {
+                    "Tunnel registry was corrupt and moved to ${backup.name}. Existing config files were left untouched."
+                } else {
+                    "Tunnel registry is corrupt and could not be backed up: ${e.message}"
+                },
+            )
         }
     }
 
-    private fun save(next: List<ServiceEntity>): Boolean =
-        try {
-            val temp = File.createTempFile("services", ".json.tmp", servicesFile.parentFile)
+    private fun save(next: List<ServiceEntity>): Boolean {
+        if (!servicesFile.parentFile.exists() && !servicesFile.parentFile.mkdirs()) {
+            AppState.reportPersistenceIssue(
+                "Failed to create tunnel registry directory: ${servicesFile.parentFile.absolutePath}",
+            )
+            return false
+        }
+
+        var temp: File? = null
+        return try {
+            temp = File.createTempFile("services", ".json.tmp", servicesFile.parentFile)
             temp.writeText(json.encodeToString(next))
+            temp.restrictToOwner()
             try {
                 Files.move(
                     temp.toPath(),
@@ -104,15 +130,25 @@ class ServiceRegistry(
                     StandardCopyOption.REPLACE_EXISTING,
                 )
             } catch (_: Exception) {
-                Files.move(temp.toPath(), servicesFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                Files.move(
+                    temp.toPath(),
+                    servicesFile.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING,
+                )
             }
+            servicesFile.restrictToOwner()
             true
         } catch (e: Exception) {
-            println("Failed to save services: ${e.message}")
+            AppState.reportPersistenceIssue(
+                "Failed to save tunnel registry: ${e.message ?: "unknown filesystem error"}",
+            )
             false
+        } finally {
+            temp?.takeIf { it.exists() }?.delete()
         }
+    }
 
-    fun addOrUpdateService(service: ServiceEntity) {
+    fun addOrUpdateService(service: ServiceEntity): Boolean {
         val current = _services.value.toMutableList()
         val index = current.indexOfFirst { it.id == service.id }
         if (index >= 0) {
@@ -120,9 +156,26 @@ class ServiceRegistry(
         } else {
             current.add(service)
         }
-        if (save(current)) {
-            _services.value = current
-        }
+        if (!save(current)) return false
+        _services.value = current
+        return true
+    }
+
+    fun replaceService(
+        oldId: String?,
+        service: ServiceEntity,
+    ): Boolean {
+        val current =
+            _services.value
+                .filterNot { existing ->
+                    existing.id == service.id ||
+                        (oldId != null && existing.id == oldId)
+                }
+                .toMutableList()
+        current.add(service)
+        if (!save(current)) return false
+        _services.value = current
+        return true
     }
 
     fun updateServiceStatus(
@@ -147,11 +200,11 @@ class ServiceRegistry(
         }
     }
 
-    fun removeService(id: String) {
+    fun removeService(id: String): Boolean {
         val current = _services.value.filter { it.id != id }
-        if (save(current)) {
-            _services.value = current
-        }
+        if (!save(current)) return false
+        _services.value = current
+        return true
     }
 
     fun updateDesiredRunning(id: String, desiredRunning: Boolean) {

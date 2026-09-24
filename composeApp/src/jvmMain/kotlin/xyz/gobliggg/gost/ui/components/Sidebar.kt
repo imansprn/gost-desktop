@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import gost.composeapp.generated.resources.gostLogoPainter
+import xyz.gobliggg.gost.data.EngineTransition
 import xyz.gobliggg.gost.ui.theme.*
 import xyz.gobliggg.gost.ui.theme.Spacing
 
@@ -58,6 +59,7 @@ fun Sidebar(
     connectionName: String?,
     isRuntimeValid: Boolean,
     isEngineRunning: Boolean,
+    engineTransition: EngineTransition? = null,
     gostVersion: String?,
     onItemSelected: (String) -> Unit,
     onToggleCollapse: () -> Unit,
@@ -156,6 +158,8 @@ fun Sidebar(
                                     .background(
                                 when {
                                     !isRuntimeValid -> sc.statusError
+                                    engineTransition == EngineTransition.STARTING -> sc.statusInfo
+                                    engineTransition == EngineTransition.STOPPING -> sc.statusWarning
                                     isEngineRunning -> sc.statusSuccess
                                     else -> sc.textMuted
                                 },
@@ -173,6 +177,8 @@ fun Sidebar(
                         text =
                             when {
                                 !isRuntimeValid -> "Runtime unavailable"
+                                engineTransition == EngineTransition.STARTING -> "Engine starting…"
+                                engineTransition == EngineTransition.STOPPING -> "Engine stopping…"
                                 isEngineRunning -> "Engine active"
                                 else -> "Engine stopped"
                             },
@@ -220,13 +226,19 @@ fun Sidebar(
                 item =
                     SidebarItem(
                         "disconnect",
-                        if (isEngineRunning) "Stop Engine" else "Start Engine",
+                        when (engineTransition) {
+                            EngineTransition.STARTING -> "Starting Engine…"
+                            EngineTransition.STOPPING -> "Stopping Engine…"
+                            null -> if (isEngineRunning) "Stop Engine" else "Start Engine"
+                        },
                         androidx.compose.material.icons.Icons.Default.PowerSettingsNew,
                     ),
                 isSelected = false,
                 isCollapsed = collapsed,
                 lightShell = lightShell,
-                onClick = onDisconnect,
+                onClick = {
+                    if (engineTransition == null) onDisconnect()
+                },
                 tint =
                     if (isEngineRunning) {
                         if (lightShell) Rose500 else AmberStatus

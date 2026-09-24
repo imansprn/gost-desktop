@@ -163,28 +163,53 @@ class ServicesScreen(
                             }
 
                             // Quick Actions
-                            Row(Modifier.width(ServiceTableDimensions.actionsWidth), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                                if (svc.status == ServiceStatus.RUNNING) {
-                                    SaaSButton(
-                                        text = "Stop",
-                                        onClick = { model.stopService(svc.id) },
-                                        type = SaaSButtonType.SECONDARY,
-                                        modifier = Modifier.width(ServiceTableDimensions.actionButtonWidth),
-                                    )
-                                } else {
-                                    SaaSButton(
-                                        text = "Start",
-                                        onClick = { model.startService(svc.id) },
-                                        enabled = engineRunning,
-                                        type = SaaSButtonType.ACTION,
-                                        modifier = Modifier.width(ServiceTableDimensions.actionButtonWidth),
-                                    )
+                            val isTransitioning =
+                                svc.status == ServiceStatus.STARTING ||
+                                    svc.status == ServiceStatus.STOPPING
+                            Row(
+                                Modifier.width(ServiceTableDimensions.actionsWidth),
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                            ) {
+                                when (svc.status) {
+                                    ServiceStatus.RUNNING ->
+                                        SaaSButton(
+                                            text = "Stop",
+                                            onClick = { model.stopService(svc.id) },
+                                            type = SaaSButtonType.SECONDARY,
+                                            modifier = Modifier.width(ServiceTableDimensions.actionButtonWidth),
+                                        )
+                                    ServiceStatus.STARTING ->
+                                        SaaSButton(
+                                            text = "Starting",
+                                            onClick = {},
+                                            enabled = false,
+                                            type = SaaSButtonType.ACTION,
+                                            modifier = Modifier.width(ServiceTableDimensions.actionButtonWidth),
+                                        )
+                                    ServiceStatus.STOPPING ->
+                                        SaaSButton(
+                                            text = "Stopping",
+                                            onClick = {},
+                                            enabled = false,
+                                            type = SaaSButtonType.SECONDARY,
+                                            modifier = Modifier.width(ServiceTableDimensions.actionButtonWidth),
+                                        )
+                                    ServiceStatus.IDLE,
+                                    ServiceStatus.ERROR,
+                                    ->
+                                        SaaSButton(
+                                            text = "Start",
+                                            onClick = { model.startService(svc.id) },
+                                            enabled = engineRunning,
+                                            type = SaaSButtonType.ACTION,
+                                            modifier = Modifier.width(ServiceTableDimensions.actionButtonWidth),
+                                        )
                                 }
 
                                 SaaSButton(
                                     text = "Restart",
                                     onClick = { model.restartService(svc.id) },
-                                    enabled = engineRunning,
+                                    enabled = engineRunning && !isTransitioning,
                                     type = SaaSButtonType.SECONDARY,
                                     modifier = Modifier.width(ServiceTableDimensions.actionButtonWidth),
                                 )
@@ -211,6 +236,7 @@ class ServicesScreen(
                                 ) {
                                     DropdownMenuItem(
                                         text = { Text("Edit") },
+                                        enabled = !isTransitioning,
                                         onClick = {
                                             rowMenuService = null
                                             onEditService(svc.name)
@@ -219,6 +245,7 @@ class ServicesScreen(
                                     )
                                     DropdownMenuItem(
                                         text = { Text("Delete…", color = sc.statusError) },
+                                        enabled = !isTransitioning,
                                         onClick = {
                                             rowMenuService = null
                                             if (settings.confirmDeletes) {

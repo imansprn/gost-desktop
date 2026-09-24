@@ -28,6 +28,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
+import xyz.gobliggg.gost.data.AppState
+import xyz.gobliggg.gost.data.ServiceRegistry
+import xyz.gobliggg.gost.data.ServiceStatus
 import xyz.gobliggg.gost.ui.components.*
 import xyz.gobliggg.gost.ui.theme.*
 
@@ -48,6 +51,9 @@ class DashboardScreen(
     @Composable
     override fun Content() {
         val sc = GostSemantics.colors
+        val engineRunning by AppState.isEngineRunning.collectAsState()
+        val services by ServiceRegistry.default().services.collectAsState()
+        val activeTunnelCount = services.count { it.status == ServiceStatus.RUNNING }
 
         ScreenScaffold(
             header = {
@@ -121,7 +127,12 @@ class DashboardScreen(
                     Spacer(Modifier.height(Spacing.xxl))
 
                     Text(
-                        text = "GOST tunnel wrapper is online.",
+                        text =
+                            if (engineRunning) {
+                                "GOST tunnel engine is active."
+                            } else {
+                                "GOST tunnel engine is stopped."
+                            },
                         style = MaterialTheme.typography.headlineMedium,
                         color = sc.textPrimary,
                         fontWeight = FontWeight.Bold,
@@ -131,7 +142,12 @@ class DashboardScreen(
                     Spacer(Modifier.height(Spacing.sm))
 
                     Text(
-                        text = "Local proxy chains, listeners, and forwarding rules are ready to manage.",
+                        text =
+                            if (engineRunning) {
+                                "Local proxy chains, listeners, and forwarding rules are ready to manage."
+                            } else {
+                                "Start the engine to run tunnels. Configuration remains available while stopped."
+                            },
                         style = MaterialTheme.typography.titleMedium,
                         color = sc.textMuted,
                         textAlign = TextAlign.Center,
@@ -151,20 +167,29 @@ class DashboardScreen(
                                 .border(GostControlSize.borderWidth, sc.borderSubtle, RoundedCornerShape(GostRadius.pill))
                                 .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
                     ) {
-                        Text("Core: 127.0.0.1", color = sc.textMuted, style = GostTextStyles.pillLabel)
+                        Text(
+                            "Configured tunnels: ${services.size}",
+                            color = sc.textMuted,
+                            style = GostTextStyles.pillLabel,
+                        )
                         Spacer(Modifier.width(Spacing.lg))
                         Box(Modifier.size(DashboardDimensions.metadataSeparator).clip(CircleShape).background(sc.textDisabled))
                         Spacer(Modifier.width(Spacing.lg))
-                        Text("Active tunnels: 4", color = sc.textMuted, style = GostTextStyles.pillLabel)
+                        Text(
+                            "Active tunnels: $activeTunnelCount",
+                            color = sc.textMuted,
+                            style = GostTextStyles.pillLabel,
+                        )
                         Spacer(Modifier.width(Spacing.lg))
                         Box(Modifier.size(DashboardDimensions.metadataSeparator).clip(CircleShape).background(sc.textDisabled))
                         Spacer(Modifier.width(Spacing.lg))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(Modifier.size(DashboardDimensions.statusDot).clip(CircleShape).background(sc.statusSuccess))
+                            val statusColor = if (engineRunning) sc.statusSuccess else sc.textMuted
+                            Box(Modifier.size(DashboardDimensions.statusDot).clip(CircleShape).background(statusColor))
                             Spacer(Modifier.width(Spacing.sm))
                             Text(
-                                "Wrapped",
-                                color = sc.statusSuccess,
+                                if (engineRunning) "Engine Active" else "Engine Stopped",
+                                color = statusColor,
                                 style = GostTextStyles.pillLabel.copy(fontWeight = FontWeight.Bold),
                             )
                         }

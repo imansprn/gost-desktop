@@ -2,6 +2,7 @@ package xyz.gobliggg.gost.screen.services
 
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -54,23 +55,45 @@ class ServicesScreenModel(
     }
 
     fun startService(id: String) {
-        processManager.startService(id)
+        screenModelScope.launch(Dispatchers.IO) {
+            processManager.startService(id)
+        }
     }
 
     fun stopService(id: String) {
-        processManager.stopService(id)
+        screenModelScope.launch(Dispatchers.IO) {
+            processManager.stopService(id)
+        }
     }
 
     fun restartService(id: String) {
-        processManager.restartService(id)
+        screenModelScope.launch(Dispatchers.IO) {
+            processManager.restartService(id)
+        }
     }
 
     fun deleteService(id: String) {
-        stopService(id)
-        configBuilder.deleteServiceConfig(id)
-        serviceRegistry.removeService(id)
-        screenModelScope.launch {
-            ShellFeedback.showSnackbar("Tunnel deleted")
+        screenModelScope.launch(Dispatchers.IO) {
+            try {
+                processManager.stopService(id)
+                if (!serviceRegistry.removeService(id)) {
+                    throw IllegalStateException("Failed to persist tunnel deletion")
+                }
+                try {
+                    configBuilder.deleteServiceConfig(id)
+                } catch (cleanupError: Exception) {
+                    xyz.gobliggg.gost.data.AppState.reportPersistenceIssue(
+                        "Tunnel was deleted, but its config file could not be removed: " +
+                            (cleanupError.message ?: "unknown filesystem error"),
+                    )
+                }
+                ShellFeedback.showSnackbar("Tunnel deleted")
+            } catch (e: Exception) {
+                _state.value =
+                    _state.value.copy(
+                        errorMessage = e.message ?: "Failed to delete tunnel",
+                    )
+            }
         }
     }
 

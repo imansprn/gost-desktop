@@ -9,10 +9,10 @@ import java.util.UUID
  *   Used for: Dashboard, Services, Chains, … (peer destinations).
  * - **PUSH** — Opening the service wizard pushes `service-new-<uuid>` or `service-edit:*` onto the stack
  *   above the current primary route. **Escape** pops one level when depth > 1.
- * - **MODAL / OVERLAY** — Chain create/edit dialog, delete confirmations, session-expired alert.
+ * - **MODAL / OVERLAY** — Chain create/edit dialog and delete/unsaved-change confirmations.
  *   Dismiss returns to the underlying shell route without changing stack depth.
- * - **REDIRECT** — Forced leave to connection setup: [AppState.disconnectForRecovery] after 401,
- *   or manual Disconnect (clears session; optional return route only for recovery flow).
+ * - **RUNTIME SETUP** — An invalid runtime or explicit runtime reconfiguration shows Connection Setup
+ *   outside the shell. This local-only app has no authenticated session/401 redirect flow.
  *
  * The app does not use Decompose/Voyager stacks for the shell; behavior is implemented in
  * the root `App` composable with an explicit list of route ids.

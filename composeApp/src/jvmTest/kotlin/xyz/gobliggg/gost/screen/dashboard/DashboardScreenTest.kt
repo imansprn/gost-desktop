@@ -25,7 +25,9 @@ class DashboardScreenTest {
         composeTestRule.onNodeWithText("Dashboard").assertExists()
         composeTestRule.onNodeWithText("OVERVIEW").assertExists()
 
-        // Check welcome message
-        composeTestRule.onNodeWithText("GOST tunnel wrapper is online.").assertExists()
+        // Check dynamic engine status rather than a hardcoded runtime message.
+        composeTestRule
+            .onNode(hasText("GOST tunnel engine is", substring = true))
+            .assertExists()
     }
 }

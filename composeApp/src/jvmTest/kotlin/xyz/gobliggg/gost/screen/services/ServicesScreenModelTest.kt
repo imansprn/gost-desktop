@@ -39,6 +39,7 @@ class ServicesScreenModelTest {
         
         mockServices = MutableStateFlow(emptyList())
         every { registry.services } returns mockServices
+        every { registry.removeService(any()) } returns true
     }
 
     @After

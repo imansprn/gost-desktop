@@ -24,14 +24,67 @@ import xyz.gobliggg.gost.api.dto.*
 import xyz.gobliggg.gost.screen.advanced.AdvancedTab
 import xyz.gobliggg.gost.ui.theme.*
 
+private fun advancedObjectName(obj: Any?): String =
+    when (obj) {
+        is BypassDto -> obj.name.orEmpty()
+        is AdmissionDto -> obj.name.orEmpty()
+        is ResolverDto -> obj.name.orEmpty()
+        is HostsDto -> obj.name.orEmpty()
+        else -> ""
+    }
+
+private fun withAdvancedObjectName(
+    obj: Any?,
+    name: String,
+): Any =
+    when (obj) {
+        is BypassDto -> obj.copy(name = name)
+        is AdmissionDto -> obj.copy(name = name)
+        is ResolverDto -> obj.copy(name = name)
+        is HostsDto -> obj.copy(name = name)
+        else -> obj ?: error("Unsupported advanced object")
+    }
+
+private fun emptyAdvancedObject(tab: AdvancedTab): Any =
+    when (tab) {
+        AdvancedTab.BYPASS -> BypassDto(name = "", reverse = false, matchers = emptyList())
+        AdvancedTab.ADMISSION -> AdmissionDto(name = "", reverse = false, matchers = emptyList())
+        AdvancedTab.RESOLVERS -> ResolverDto(name = "", nameservers = emptyList(), prefer = "ipv4")
+        AdvancedTab.HOSTS -> HostsDto(name = "", mappings = emptyList())
+    }
+
+private fun encodeAdvancedObject(
+    json: Json,
+    obj: Any?,
+): String =
+    when (obj) {
+        is BypassDto -> json.encodeToString(obj)
+        is AdmissionDto -> json.encodeToString(obj)
+        is ResolverDto -> json.encodeToString(obj)
+        is HostsDto -> json.encodeToString(obj)
+        else -> ""
+    }
+
+private fun parseAdvancedObject(
+    json: Json,
+    tab: AdvancedTab,
+    rawJson: String,
+): Any =
+    when (tab) {
+        AdvancedTab.BYPASS -> json.decodeFromString<BypassDto>(rawJson)
+        AdvancedTab.ADMISSION -> json.decodeFromString<AdmissionDto>(rawJson)
+        AdvancedTab.RESOLVERS -> json.decodeFromString<ResolverDto>(rawJson)
+        AdvancedTab.HOSTS -> json.decodeFromString<HostsDto>(rawJson)
+    }
+
 @Composable
 fun AdvancedObjectDialog(
     tab: AdvancedTab,
     initialObject: Any? = null,
+    initialRawJson: String? = null,
     onSave: (Any) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var editTab by remember { mutableStateOf(0) } // 0: Visual, 1: JSON
     val json =
         remember {
             Json {
@@ -41,39 +94,24 @@ fun AdvancedObjectDialog(
         }
     val sc = GostSemantics.colors
     var rawError by remember { mutableStateOf<String?>(null) }
-
-    // Global name state
-    var name by remember {
-        mutableStateOf(
-            when (initialObject) {
-                is BypassDto -> initialObject.name ?: ""
-                is AdmissionDto -> initialObject.name ?: ""
-                is ResolverDto -> initialObject.name ?: ""
-                is HostsDto -> initialObject.name ?: ""
-                else -> ""
-            },
-        )
+    var editTab by remember(tab, initialRawJson) {
+        mutableStateOf(if (initialRawJson != null) 1 else 0)
     }
-
-    // JSON Raw state
-    var rawJson by remember {
-        mutableStateOf(
-            if (initialObject != null) {
-                when (initialObject) {
-                    is BypassDto -> json.encodeToString(initialObject)
-                    is AdmissionDto -> json.encodeToString(initialObject)
-                    is ResolverDto -> json.encodeToString(initialObject)
-                    is HostsDto -> json.encodeToString(initialObject)
-                    else -> ""
-                }
-            } else {
-                ""
-            },
-        )
+    var visualRevision by remember { mutableStateOf(0) }
+    var draftObject by remember(tab, initialObject) {
+        mutableStateOf(initialObject ?: emptyAdvancedObject(tab))
+    }
+    var name by remember(tab, initialObject) {
+        mutableStateOf(advancedObjectName(draftObject))
+    }
+    var rawJson by remember(tab, initialObject, initialRawJson) {
+        mutableStateOf(initialRawJson ?: encodeAdvancedObject(json, draftObject))
     }
 
     SaaSDialog(
-        title = "${if (initialObject == null) "New" else "Edit"} ${tab.name.lowercase().capitalize()}",
+        title =
+            "${if (initialObject == null && initialRawJson == null) "New" else "Edit"} " +
+                tab.name.lowercase().replaceFirstChar { it.uppercase() },
         onDismissRequest = onDismiss,
         size = SaaSDialogSize.Xl,
         showSplit = true,
@@ -86,13 +124,32 @@ fun AdvancedObjectDialog(
                     label = "Visual Editor",
                     description = "Form-based configuration",
                     isSelected = editTab == 0,
-                    onClick = { editTab = 0 },
+                    onClick = {
+                        if (editTab == 1) {
+                            try {
+                                val parsed = parseAdvancedObject(json, tab, rawJson)
+                                draftObject = parsed
+                                name = advancedObjectName(parsed)
+                                rawError = null
+                                visualRevision += 1
+                                editTab = 0
+                            } catch (e: Exception) {
+                                rawError = e.message ?: "Invalid JSON"
+                            }
+                        }
+                    },
                 )
                 ModeSelectTab(
                     label = "Raw JSON",
                     description = "Direct configuration edit",
                     isSelected = editTab == 1,
-                    onClick = { editTab = 1 },
+                    onClick = {
+                        if (editTab == 0) {
+                            rawJson = encodeAdvancedObject(json, draftObject)
+                            rawError = null
+                            editTab = 1
+                        }
+                    },
                 )
             }
 
@@ -115,24 +172,48 @@ fun AdvancedObjectDialog(
                 SaaSTextField(
                     label = "Identifier Name *",
                     value = name,
-                    onValueChange = { name = it },
+                    onValueChange = {
+                        name = it
+                        draftObject = withAdvancedObjectName(draftObject, it)
+                    },
                     placeholder = "template-id",
                     helperText = "Unique name to reference this object",
                 )
 
                 Spacer(Modifier.height(Spacing.xl))
 
-                when (tab) {
-                    AdvancedTab.BYPASS -> BypassAdmissionForm(name, (initialObject as? BypassDto), onSave = { onSave(it) })
-                    AdvancedTab.ADMISSION ->
-                        BypassAdmissionForm(
-                            name,
-                            (initialObject as? AdmissionDto),
-                            isAdmission = true,
-                            onSave = { onSave(it) },
-                        )
-                    AdvancedTab.RESOLVERS -> ResolverForm(name, (initialObject as? ResolverDto), onSave = { onSave(it) })
-                    AdvancedTab.HOSTS -> HostsForm(name, (initialObject as? HostsDto), onSave = { onSave(it) })
+                key(visualRevision) {
+                    when (tab) {
+                        AdvancedTab.BYPASS ->
+                            BypassAdmissionForm(
+                                name = name,
+                                initial = draftObject as? BypassDto,
+                                onDraftChange = { draftObject = it },
+                                onSave = { onSave(it) },
+                            )
+                        AdvancedTab.ADMISSION ->
+                            BypassAdmissionForm(
+                                name = name,
+                                initial = draftObject as? AdmissionDto,
+                                isAdmission = true,
+                                onDraftChange = { draftObject = it },
+                                onSave = { onSave(it) },
+                            )
+                        AdvancedTab.RESOLVERS ->
+                            ResolverForm(
+                                name = name,
+                                initial = draftObject as? ResolverDto,
+                                onDraftChange = { draftObject = it },
+                                onSave = { onSave(it) },
+                            )
+                        AdvancedTab.HOSTS ->
+                            HostsForm(
+                                name = name,
+                                initial = draftObject as? HostsDto,
+                                onDraftChange = { draftObject = it },
+                                onSave = { onSave(it) },
+                            )
+                    }
                 }
             } else {
                 SaaSTableHeader("RAW CONFIGURATION (JSON)")
@@ -167,13 +248,13 @@ fun AdvancedObjectDialog(
                         text = "Save Template",
                         onClick = {
                             try {
-                                val parsed =
-                                    when (tab) {
-                                        AdvancedTab.BYPASS -> json.decodeFromString<BypassDto>(rawJson)
-                                        AdvancedTab.ADMISSION -> json.decodeFromString<AdmissionDto>(rawJson)
-                                        AdvancedTab.RESOLVERS -> json.decodeFromString<ResolverDto>(rawJson)
-                                        AdvancedTab.HOSTS -> json.decodeFromString<HostsDto>(rawJson)
-                                    }
+                                val parsed = parseAdvancedObject(json, tab, rawJson)
+                                val parsedName = advancedObjectName(parsed)
+                                if (!parsedName.matches(Regex("^[a-zA-Z0-9_-]+$"))) {
+                                    throw IllegalArgumentException(
+                                        "JSON must contain a valid non-empty name using letters, numbers, underscore, or hyphen.",
+                                    )
+                                }
                                 rawError = null
                                 onSave(parsed)
                             } catch (e: Exception) {
@@ -196,6 +277,7 @@ fun BypassAdmissionForm(
     name: String,
     initial: Any?,
     isAdmission: Boolean = false,
+    onDraftChange: (Any) -> Unit = {},
     onSave: (Any) -> Unit,
 ) {
     val sc = GostSemantics.colors
@@ -208,15 +290,26 @@ fun BypassAdmissionForm(
             },
         )
     }
-    var matchers by remember {
-        mutableStateOf(
-            (
-                if (isAdmission) {
-                    (initial as? AdmissionDto)?.matchers ?: emptyList()
-                } else {
-                    (initial as? BypassDto)?.matchers ?: emptyList()
-                }
-            ).toMutableList(),
+    val matchers =
+        remember(initial, isAdmission) {
+            mutableStateListOf<String>().apply {
+                addAll(
+                    if (isAdmission) {
+                        (initial as? AdmissionDto)?.matchers ?: emptyList()
+                    } else {
+                        (initial as? BypassDto)?.matchers ?: emptyList()
+                    },
+                )
+            }
+        }
+
+    LaunchedEffect(name, reverse, matchers.toList(), isAdmission) {
+        onDraftChange(
+            if (isAdmission) {
+                AdmissionDto(name = name, reverse = reverse, matchers = matchers.toList())
+            } else {
+                BypassDto(name = name, reverse = reverse, matchers = matchers.toList())
+            },
         )
     }
 
@@ -296,14 +389,27 @@ fun BypassAdmissionForm(
 fun ResolverForm(
     name: String,
     initial: ResolverDto?,
+    onDraftChange: (ResolverDto) -> Unit = {},
     onSave: (ResolverDto) -> Unit,
 ) {
     val sc = GostSemantics.colors
     var ttl by remember { mutableStateOf(initial?.ttl ?: "") }
     var prefer by remember { mutableStateOf(initial?.prefer ?: "ipv4") }
-    var nameservers by remember {
-        mutableStateOf(
-            (initial?.nameservers ?: listOf(NameserverDto("", ""))).toMutableList(),
+    val nameservers =
+        remember(initial) {
+            mutableStateListOf<NameserverDto>().apply {
+                addAll(initial?.nameservers ?: listOf(NameserverDto("", "")))
+            }
+        }
+
+    LaunchedEffect(name, ttl, prefer, nameservers.toList()) {
+        onDraftChange(
+            ResolverDto(
+                name = name,
+                nameservers = nameservers.toList(),
+                ttl = ttl.ifBlank { null },
+                prefer = prefer,
+            ),
         )
     }
 
@@ -393,13 +499,19 @@ fun ResolverForm(
 fun HostsForm(
     name: String,
     initial: HostsDto?,
+    onDraftChange: (HostsDto) -> Unit = {},
     onSave: (HostsDto) -> Unit,
 ) {
     val sc = GostSemantics.colors
-    var mappings by remember {
-        mutableStateOf(
-            (initial?.mappings ?: listOf(HostMappingDto("", listOf("")))).toMutableList(),
-        )
+    val mappings =
+        remember(initial) {
+            mutableStateListOf<HostMappingDto>().apply {
+                addAll(initial?.mappings ?: listOf(HostMappingDto("", listOf(""))))
+            }
+        }
+
+    LaunchedEffect(name, mappings.toList()) {
+        onDraftChange(HostsDto(name = name, mappings = mappings.toList()))
     }
 
     SaaSTableHeader("HOST MAPPINGS")

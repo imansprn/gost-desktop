@@ -42,13 +42,19 @@ fun AppShell(
 ) {
     val isRuntimeValid by AppState.isRuntimeValid.collectAsState()
     val isEngineRunning by AppState.isEngineRunning.collectAsState()
+    val engineTransition by AppState.engineTransition.collectAsState()
     val settings by AppState.settings.collectAsState()
+    val persistenceIssue by AppState.persistenceIssue.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         ShellFeedback.snackbars.collect { message ->
             snackbarHostState.showSnackbar(message)
         }
+    }
+
+    LaunchedEffect(persistenceIssue) {
+        persistenceIssue?.let { snackbarHostState.showSnackbar(it) }
     }
 
     val sidebarItems =
@@ -74,6 +80,7 @@ fun AppShell(
                 connectionName = "Local Mode",
                 isRuntimeValid = isRuntimeValid,
                 isEngineRunning = isEngineRunning,
+                engineTransition = engineTransition,
                 gostVersion = null,
                 onItemSelected = onNavigate,
                 onToggleCollapse = {

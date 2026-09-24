@@ -51,6 +51,7 @@ class AdvancedScreen : Screen {
         var templates by remember { mutableStateOf(ConfigBuilder.default().listTemplates(templateType)) }
         var showDialog by remember { mutableStateOf(false) }
         var editingObject by remember { mutableStateOf<Any?>(null) }
+        var editingRawJson by remember { mutableStateOf<String?>(null) }
         var editingName by remember { mutableStateOf<String?>(null) }
         var deleteTarget by remember { mutableStateOf<String?>(null) }
         val settings by AppState.settings.collectAsState()
@@ -154,13 +155,15 @@ class AdvancedScreen : Screen {
                                     json = json,
                                     onEdit = {
                                         val parsed = parseObject(activeTab, content, json, name)
+                                        editingName = name
                                         if (parsed == null) {
-                                            ShellFeedback.showSnackbar("Unable to parse '$name'. Repair its JSON before editing.")
+                                            editingObject = null
+                                            editingRawJson = content.orEmpty()
                                         } else {
-                                            editingName = name
                                             editingObject = parsed
-                                            showDialog = true
+                                            editingRawJson = null
                                         }
+                                        showDialog = true
                                     },
                                     onDelete = {
                                         if (settings.confirmDeletes) {
@@ -187,6 +190,7 @@ class AdvancedScreen : Screen {
                 onClick = {
                     editingName = null
                     editingObject = null
+                    editingRawJson = null
                     showDialog = true
                 },
                 modifier =
@@ -205,6 +209,7 @@ class AdvancedScreen : Screen {
             AdvancedObjectDialog(
                 tab = activeTab,
                 initialObject = editingObject,
+                initialRawJson = editingRawJson,
                 onSave = { obj ->
                     val name =
                         when (obj) {
@@ -251,6 +256,7 @@ class AdvancedScreen : Screen {
                                 .synchronize(templateType, name)
                                 .getOrThrow()
                             editingName = name
+                            editingRawJson = null
                             reload()
                             showDialog = false
                             ShellFeedback.showSnackbar("Configuration object saved")
@@ -263,6 +269,7 @@ class AdvancedScreen : Screen {
                     showDialog = false
                     editingName = null
                     editingObject = null
+                    editingRawJson = null
                 },
             )
         }

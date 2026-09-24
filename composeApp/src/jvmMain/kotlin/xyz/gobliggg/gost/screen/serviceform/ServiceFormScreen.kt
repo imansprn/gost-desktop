@@ -202,7 +202,11 @@ class ServiceFormScreen(
                 initialChain = null,
                 onSave = { ch ->
                     model.createChainFromWizard(ch) { err ->
-                        if (err == null) chainDialogOpen = false
+                        if (err == null) {
+                            chainDialogOpen = false
+                        } else {
+                            xyz.gobliggg.gost.ui.ShellFeedback.showSnackbar(err)
+                        }
                     }
                 },
                 onDismiss = { chainDialogOpen = false },

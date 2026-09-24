@@ -42,6 +42,7 @@ class ServiceFormScreenModelTest {
         every { draftStore.load() } returns null
         every { configBuilder.isValidName(any()) } returns true
         every { registry.getService(any()) } returns null
+        every { registry.replaceService(any(), any()) } returns true
     }
 
     @After

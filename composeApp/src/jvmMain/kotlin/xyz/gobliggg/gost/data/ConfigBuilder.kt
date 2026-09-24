@@ -24,6 +24,8 @@ class ConfigBuilder(
     init {
         if (!configsDir.exists()) configsDir.mkdirs()
         if (!templatesDir.exists()) templatesDir.mkdirs()
+        configsDir.restrictTreeToOwner()
+        templatesDir.restrictTreeToOwner()
     }
 
     companion object {
@@ -63,6 +65,7 @@ class ConfigBuilder(
         val temp = File.createTempFile(file.name, ".tmp", file.parentFile)
         try {
             temp.writeText(content)
+            temp.restrictToOwner()
             try {
                 Files.move(
                     temp.toPath(),
@@ -73,6 +76,7 @@ class ConfigBuilder(
             } catch (_: Exception) {
                 Files.move(temp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING)
             }
+            file.restrictToOwner()
         } finally {
             if (temp.exists()) temp.delete()
         }
@@ -90,11 +94,64 @@ class ConfigBuilder(
         return file.absolutePath
     }
 
+    fun validateRawServiceConfig(
+        jsonContent: String,
+        expectedServiceId: String? = null,
+    ): JsonObject {
+        val root =
+            Json.parseToJsonElement(jsonContent) as? JsonObject
+                ?: throw IllegalArgumentException("Service config must be a JSON object")
+
+        val services =
+            root["services"] as? JsonArray
+                ?: throw IllegalArgumentException("Service config must contain a 'services' array")
+        if (services.size != 1) {
+            throw IllegalArgumentException("A tunnel config must contain exactly one service")
+        }
+
+        services.forEachIndexed { index, element ->
+            val service =
+                element as? JsonObject
+                    ?: throw IllegalArgumentException("Service at index $index must be a JSON object")
+            fun requiredString(key: String): String =
+                service[key]
+                    ?.jsonPrimitive
+                    ?.contentOrNull
+                    ?.takeIf { it.isNotBlank() }
+                    ?: throw IllegalArgumentException("Service at index $index requires non-empty '$key'")
+
+            val serviceName = requiredString("name")
+            if (expectedServiceId != null && serviceName != expectedServiceId) {
+                throw IllegalArgumentException(
+                    "Service name '$serviceName' must match tunnel '$expectedServiceId'. Rename tunnels from the Tunnels editor.",
+                )
+            }
+
+            val handler =
+                service["handler"] as? JsonObject
+                    ?: throw IllegalArgumentException("Service at index $index requires a 'handler' object")
+            val handlerType = handler["type"]?.jsonPrimitive?.contentOrNull
+            if (handlerType.isNullOrBlank()) {
+                throw IllegalArgumentException("Service at index $index requires non-empty 'handler.type'")
+            }
+
+            val listener =
+                service["listener"] as? JsonObject
+                    ?: throw IllegalArgumentException("Service at index $index requires a 'listener' object")
+            val listenerType = listener["type"]?.jsonPrimitive?.contentOrNull
+            if (listenerType.isNullOrBlank()) {
+                throw IllegalArgumentException("Service at index $index requires non-empty 'listener.type'")
+            }
+        }
+
+        return root
+    }
+
     fun deleteServiceConfig(serviceId: String) {
         validateFileName(serviceId)
         val file = File(configsDir, "$serviceId.json")
-        if (file.exists()) {
-            file.delete()
+        if (file.exists() && !file.delete()) {
+            throw IllegalStateException("Failed to delete service config '$serviceId'")
         }
     }
 

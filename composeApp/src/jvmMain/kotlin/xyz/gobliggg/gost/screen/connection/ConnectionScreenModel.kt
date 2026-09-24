@@ -19,6 +19,7 @@ data class RuntimeUiState(
     val workingDirectory: String = "",
     val autoStart: Boolean = false,
     val pathError: String? = null,
+    val workingDirectoryError: String? = null,
     val suggestedBinaryPath: String? = null,
 )
 
@@ -84,7 +85,23 @@ class ConnectionScreenModel : ScreenModel {
     }
 
     fun updateWorkingDirectory(dir: String) {
-        _state.value = _state.value.copy(workingDirectory = dir)
+        val error =
+            if (dir.isBlank()) {
+                null
+            } else {
+                val file = File(dir)
+                when {
+                    !file.exists() -> "Directory does not exist"
+                    !file.isDirectory -> "Path is not a directory"
+                    !file.canRead() -> "Directory is not readable"
+                    else -> null
+                }
+            }
+        _state.value =
+            _state.value.copy(
+                workingDirectory = dir,
+                workingDirectoryError = error,
+            )
     }
 
     fun updateAutoStart(autoStart: Boolean) {
@@ -93,8 +110,9 @@ class ConnectionScreenModel : ScreenModel {
 
     fun saveAndConnect(onConnected: () -> Unit) {
         val s = _state.value
-        updateBinaryPath(s.binaryPath) // Validate again
-        if (_state.value.pathError != null) return
+        updateBinaryPath(s.binaryPath)
+        updateWorkingDirectory(s.workingDirectory)
+        if (_state.value.pathError != null || _state.value.workingDirectoryError != null) return
 
         AppState.updateSettings {
             it.copy(

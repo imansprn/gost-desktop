@@ -7,7 +7,10 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermission
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -105,5 +108,52 @@ class ConfigBuilderTest {
 
         configBuilder.deleteServiceConfig("svc-42")
         assertNull(configBuilder.readServiceConfig("svc-42"))
+    }
+
+    @Test
+    fun `test raw service config requires valid gost structure`() {
+        val valid =
+            """{"services":[{"name":"svc","addr":":8080","handler":{"type":"http"},"listener":{"type":"tcp"}}]}"""
+        val parsed = configBuilder.validateRawServiceConfig(valid, expectedServiceId = "svc")
+        assertNotNull(parsed["services"])
+
+        listOf(
+            "{}",
+            """{"services":[]}""",
+            """{"services":[{"name":"svc"},{"name":"svc2"}]}""",
+            """{"services":[{"name":"svc"}]}""",
+            """{"services":[{"name":"svc","handler":{"type":"http"}}]}""",
+            """{"services":[{"name":"","handler":{"type":"http"},"listener":{"type":"tcp"}}]}""",
+        ).forEach { invalid ->
+            assertFailsWith<IllegalArgumentException> {
+                configBuilder.validateRawServiceConfig(invalid, expectedServiceId = "svc")
+            }
+        }
+
+        assertFailsWith<IllegalArgumentException> {
+            configBuilder.validateRawServiceConfig(
+                """{"services":[{"name":"other","handler":{"type":"http"},"listener":{"type":"tcp"}}]}""",
+                expectedServiceId = "svc",
+            )
+        }
+    }
+
+    @Test
+    fun `test sensitive template is owner only on posix filesystems`() {
+        configBuilder.saveTemplate(
+            TemplateTypes.AUTHERS,
+            "secret-auth",
+            """{"name":"secret-auth","auths":[{"username":"user","password":"secret"}]}""",
+        )
+        val file = File(baseDir, "templates/authers/secret-auth.json")
+        assertTrue(file.exists())
+
+        val permissions = runCatching { Files.getPosixFilePermissions(file.toPath()) }.getOrNull()
+        if (permissions != null) {
+            assertFalse(permissions.contains(PosixFilePermission.GROUP_READ))
+            assertFalse(permissions.contains(PosixFilePermission.GROUP_WRITE))
+            assertFalse(permissions.contains(PosixFilePermission.OTHERS_READ))
+            assertFalse(permissions.contains(PosixFilePermission.OTHERS_WRITE))
+        }
     }
 }

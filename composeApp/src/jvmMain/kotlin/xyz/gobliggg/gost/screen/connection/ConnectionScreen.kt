@@ -35,12 +35,17 @@ private object ConnectionLayoutDimensions {
 
 class ConnectionScreen(
     private val onConnected: () -> Unit,
+    private val onCancel: (() -> Unit)? = null,
 ) : Screen {
     @Composable
     override fun Content() {
         val model = rememberScreenModel { ConnectionScreenModel() }
         val state by model.state.collectAsState()
-        val canConnect = state.binaryPath.isNotBlank() && state.pathError == null
+        val persistenceIssue by xyz.gobliggg.gost.data.AppState.persistenceIssue.collectAsState()
+        val canConnect =
+            state.binaryPath.isNotBlank() &&
+                state.pathError == null &&
+                state.workingDirectoryError == null
         val sc = GostSemantics.colors
 
         Box(
@@ -129,6 +134,8 @@ class ConnectionScreen(
                         onValueChange = model::updateWorkingDirectory,
                         label = "Working Directory",
                         placeholder = "~/.gost-desktop",
+                        isError = state.workingDirectoryError != null,
+                        helperText = state.workingDirectoryError ?: "Optional. Leave blank to use the application default.",
                         modifier = Modifier.fillMaxWidth(),
                         trailingIcon = {
                             SaaSIconButton(
@@ -153,6 +160,11 @@ class ConnectionScreen(
 
                     Spacer(Modifier.height(Spacing.xxl))
 
+                    persistenceIssue?.let { message ->
+                        Banner(message, type = BannerType.Warning)
+                        Spacer(Modifier.height(Spacing.xl))
+                    }
+
                     // Auto Start
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(
@@ -176,14 +188,37 @@ class ConnectionScreen(
                 // Big gap before the button
                 Spacer(Modifier.height(ConnectionLayoutDimensions.footerGap))
 
-                SaaSButton(
-                    text = "Save & Continue",
-                    onClick = { model.saveAndConnect(onConnected) },
-                    enabled = canConnect,
-                    type = SaaSButtonType.PRIMARY,
-                    modifier = Modifier.fillMaxWidth(),
-                    size = SaaSButtonSize.Large,
-                )
+                if (onCancel == null) {
+                    SaaSButton(
+                        text = "Save & Continue",
+                        onClick = { model.saveAndConnect(onConnected) },
+                        enabled = canConnect,
+                        type = SaaSButtonType.PRIMARY,
+                        modifier = Modifier.fillMaxWidth(),
+                        size = SaaSButtonSize.Large,
+                    )
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    ) {
+                        SaaSButton(
+                            text = "Cancel",
+                            onClick = onCancel,
+                            type = SaaSButtonType.SECONDARY,
+                            modifier = Modifier.weight(1f),
+                            size = SaaSButtonSize.Large,
+                        )
+                        SaaSButton(
+                            text = "Save Runtime",
+                            onClick = { model.saveAndConnect(onConnected) },
+                            enabled = canConnect,
+                            type = SaaSButtonType.PRIMARY,
+                            modifier = Modifier.weight(1f),
+                            size = SaaSButtonSize.Large,
+                        )
+                    }
+                }
             }
         }
     }

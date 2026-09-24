@@ -3,6 +3,7 @@ package xyz.gobliggg.gost.data
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -15,6 +16,7 @@ class ProcessManagerTest {
     @Before
     fun setup() {
         registry = mockk(relaxed = true)
+        every { registry.services } returns MutableStateFlow(emptyList())
         manager = ProcessManager(registry)
 
         // Initialize AppState with a temporary repository to avoid UninitializedPropertyException
@@ -69,6 +71,28 @@ class ProcessManagerTest {
     fun `test stop and stopAll`() {
         manager.stopAll() // should not throw
         manager.stopService("non-existent") // should not throw
+    }
+
+    @Test
+    fun `test stopAll drains services that are still starting`() {
+        val starting =
+            ServiceEntity(
+                id = "s1",
+                name = "S1",
+                configPath = "/tmp/c1",
+                status = ServiceStatus.STARTING,
+                desiredRunning = true,
+            )
+        every { registry.services } returns MutableStateFlow(listOf(starting))
+
+        manager.stopAll(preserveIntent = true)
+
+        verify {
+            registry.updateServiceStatus("s1", ServiceStatus.IDLE)
+        }
+        verify(exactly = 0) {
+            registry.updateDesiredRunning("s1", false)
+        }
     }
 
     @Test

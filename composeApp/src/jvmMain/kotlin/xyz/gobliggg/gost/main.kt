@@ -34,7 +34,7 @@ fun main() =
 
         val exitApp = {
             xyz.gobliggg.gost.data.ProcessManager.default()
-                .stopAll()
+                .stopAll(preserveIntent = true)
             exitApplication()
         }
 

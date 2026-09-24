@@ -1,9 +1,12 @@
 package xyz.gobliggg.gost.screen.config
 
 import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -80,55 +83,64 @@ class ConfigEditorScreenModel(
     fun save() {
         val s = _state.value
         val serviceId = s.selectedServiceId ?: return
+        if (s.isSaving) return
         _state.value = s.copy(isSaving = true, errorMessage = null, successMessage = null)
 
-        try {
-            val root = Json.parseToJsonElement(s.content).jsonObject
-            val existing =
-                serviceRegistry.getService(serviceId)
-                    ?: throw IllegalStateException("Tunnel '$serviceId' no longer exists")
-            val wasRunning = existing.status == ServiceStatus.RUNNING
-            val newAddr =
-                root["services"]
-                    ?.jsonArray
-                    ?.firstOrNull()
-                    ?.jsonObject
-                    ?.get("addr")
-                    ?.jsonPrimitive
-                    ?.content
-                    ?: existing.addr
+        screenModelScope.launch(Dispatchers.IO) {
+            val previousContent = configBuilder.readServiceConfig(serviceId)
+            try {
+                val root = configBuilder.validateRawServiceConfig(s.content, expectedServiceId = serviceId)
+                val existing =
+                    serviceRegistry.getService(serviceId)
+                        ?: throw IllegalStateException("Tunnel '$serviceId' no longer exists")
+                val wasRunning = existing.status == ServiceStatus.RUNNING
+                val newAddr =
+                    root["services"]
+                        ?.jsonArray
+                        ?.firstOrNull()
+                        ?.jsonObject
+                        ?.get("addr")
+                        ?.jsonPrimitive
+                        ?.content
+                        ?: existing.addr
 
-            configBuilder.buildServiceConfig(serviceId, s.content)
-            serviceRegistry.addOrUpdateService(existing.copy(addr = newAddr))
+                configBuilder.buildServiceConfig(serviceId, s.content)
+                if (!serviceRegistry.addOrUpdateService(existing.copy(addr = newAddr))) {
+                    if (previousContent != null) {
+                        configBuilder.buildServiceConfig(serviceId, previousContent)
+                    }
+                    throw IllegalStateException("Failed to persist tunnel registry")
+                }
 
-            if (wasRunning && AppState.isEngineRunning.value) {
-                processManager.restartService(serviceId)
-            }
-
-            _state.value =
-                _state.value.copy(
-                    isSaving = false,
-                    isDirty = false,
-                    successMessage =
-                        if (wasRunning && AppState.isEngineRunning.value) {
-                            "Configuration saved and tunnel restarted."
-                        } else {
-                            "Configuration saved to disk."
-                        },
-                )
-            ShellFeedback.showSnackbar(
                 if (wasRunning && AppState.isEngineRunning.value) {
-                    "Configuration saved and tunnel restarted"
-                } else {
-                    "Configuration saved"
-                },
-            )
-        } catch (e: Exception) {
-            _state.value =
-                _state.value.copy(
-                    isSaving = false,
-                    errorMessage = "Save failed: ${e.message ?: "Invalid JSON"}",
+                    processManager.restartService(serviceId)
+                }
+
+                _state.value =
+                    _state.value.copy(
+                        isSaving = false,
+                        isDirty = false,
+                        successMessage =
+                            if (wasRunning && AppState.isEngineRunning.value) {
+                                "Configuration saved and tunnel restarted."
+                            } else {
+                                "Configuration saved to disk."
+                            },
+                    )
+                ShellFeedback.showSnackbar(
+                    if (wasRunning && AppState.isEngineRunning.value) {
+                        "Configuration saved and tunnel restarted"
+                    } else {
+                        "Configuration saved"
+                    },
                 )
+            } catch (e: Exception) {
+                _state.value =
+                    _state.value.copy(
+                        isSaving = false,
+                        errorMessage = "Save failed: ${e.message ?: "Invalid JSON"}",
+                    )
+            }
         }
     }
 

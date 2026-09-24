@@ -58,6 +58,7 @@ fun App() {
     if (!isInitialized) return
 
     val isRuntimeValid by AppState.isRuntimeValid.collectAsState()
+    val isRuntimeReconfiguring by AppState.isRuntimeReconfiguring.collectAsState()
 
     val darkTheme = true
 
@@ -73,7 +74,15 @@ fun App() {
                     .background(MaterialTheme.colorScheme.background),
         ) {
             if (!isRuntimeValid) {
-                ConnectionScreen(onConnected = { }).Content()
+                ConnectionScreen(
+                    onConnected = AppState::finishRuntimeReconfiguration,
+                    onCancel =
+                        if (isRuntimeReconfiguring) {
+                            AppState::cancelRuntimeReconfiguration
+                        } else {
+                            null
+                        },
+                ).Content()
             } else {
                 MainAppContent()
             }
