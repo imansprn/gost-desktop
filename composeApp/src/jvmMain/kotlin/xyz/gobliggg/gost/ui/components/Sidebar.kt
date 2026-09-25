@@ -147,6 +147,7 @@ fun Sidebar(
                             shape = RoundedCornerShape(GostRadius.sm),
                         )
                         .background(sc.surfaceInput)
+                        .clickable(enabled = isRuntimeValid && engineTransition == null) { onDisconnect() }
                         .padding(horizontal = Spacing.sm, vertical = Spacing.sm),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
