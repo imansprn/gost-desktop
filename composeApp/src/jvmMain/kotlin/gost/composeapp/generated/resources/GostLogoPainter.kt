@@ -7,17 +7,9 @@
 package gost.composeapp.generated.resources
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.FilterQuality
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
-import org.jetbrains.compose.resources.imageResource
+import org.jetbrains.compose.resources.painterResource
 
-/** App logo from composeResources (backed by drawable/gost.png). */
+/** App brand mark from composeResources (backed by drawable/gost_brand_mark.png). */
 @Composable
-fun gostLogoPainter(): Painter {
-    val image = imageResource(Res.drawable.gost)
-    return remember(image) {
-        BitmapPainter(image, filterQuality = FilterQuality.High)
-    }
-}
+fun gostLogoPainter(): Painter = painterResource(Res.drawable.gost_brand_mark)

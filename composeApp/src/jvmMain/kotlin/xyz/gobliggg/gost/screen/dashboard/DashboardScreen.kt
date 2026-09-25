@@ -3,8 +3,9 @@
  * Copyright 2026 GOST Desktop contributors
  */
 package xyz.gobliggg.gost.screen.dashboard
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,8 +16,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -28,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
+import gost.composeapp.generated.resources.gostLogoPainter
 import xyz.gobliggg.gost.data.AppState
 import xyz.gobliggg.gost.data.ServiceRegistry
 import xyz.gobliggg.gost.data.ServiceStatus
@@ -36,10 +38,6 @@ import xyz.gobliggg.gost.ui.theme.*
 
 private object DashboardDimensions {
     val heroGraphic = 120.dp
-    val serverWidth = 56.dp
-    val serverHeight = 24.dp
-    val serverBorder = 3.dp
-    val serverLed = 4.dp
     val metadataSeparator = 3.dp
     val statusDot = 6.dp
     val heroButtonWidth = 220.dp
@@ -71,58 +69,11 @@ class DashboardScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(bottom = Spacing.xxxl),
                 ) {
-                    // Hero Graphic — sleek server icon
-                    Box(
-                        modifier =
-                            Modifier
-                                .size(DashboardDimensions.heroGraphic)
-                                .clip(RoundedCornerShape(GostRadius.xl))
-                                .background(sc.surfacePanel.copy(alpha = 0.5f))
-                                .border(
-                                    GostControlSize.borderWidth,
-                                    sc.borderSubtle,
-                                    RoundedCornerShape(GostRadius.xl),
-                                ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .size(width = DashboardDimensions.serverWidth, height = DashboardDimensions.serverHeight)
-                                        .border(DashboardDimensions.serverBorder, sc.textPrimary, RoundedCornerShape(GostRadius.sm))
-                                        .padding(start = Spacing.sm),
-                                contentAlignment = Alignment.CenterStart,
-                            ) {
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .size(DashboardDimensions.serverLed)
-                                            .clip(CircleShape)
-                                            .background(sc.textPrimary),
-                                )
-                            }
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .size(width = DashboardDimensions.serverWidth, height = DashboardDimensions.serverHeight)
-                                        .border(DashboardDimensions.serverBorder, sc.textPrimary, RoundedCornerShape(GostRadius.sm))
-                                        .padding(start = Spacing.sm),
-                                contentAlignment = Alignment.CenterStart,
-                            ) {
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .size(DashboardDimensions.serverLed)
-                                            .clip(CircleShape)
-                                            .background(sc.textPrimary),
-                                )
-                            }
-                        }
-                    }
+                    Image(
+                        painter = gostLogoPainter(),
+                        contentDescription = "GOST logo",
+                        modifier = Modifier.size(DashboardDimensions.heroGraphic),
+                    )
 
                     Spacer(Modifier.height(Spacing.xxl))
 

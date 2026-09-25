@@ -149,6 +149,19 @@ class SettingsScreen : Screen {
             // ── About ──
             SectionHeader("About")
             SectionCard {
+                GostBrandLockup()
+                Spacer(Modifier.height(Spacing.sm))
+                Text(
+                    "Simple. Powerful. Private.",
+                    color = sc.textSecondary,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(Modifier.height(Spacing.lg))
+                GostBrandConcepts(Modifier.fillMaxWidth())
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = Spacing.lg),
+                    color = sc.borderSubtle,
+                )
                 SaaSInfoRow("App Version", "1.0.0")
                 SaaSInfoRow("Target GOST", "≥ 3.1.0")
                 SaaSInfoRow("Runtime", System.getProperty("java.version", "?"))

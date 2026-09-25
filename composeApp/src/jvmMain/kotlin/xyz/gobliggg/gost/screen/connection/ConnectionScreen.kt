@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -15,11 +14,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import xyz.gobliggg.gost.ui.components.*
@@ -30,7 +26,6 @@ import javax.swing.JFileChooser
 private object ConnectionLayoutDimensions {
     val topPadding = 64.dp
     val footerGap = 80.dp
-    val logo = GostControlSize.largeHeight
 }
 
 class ConnectionScreen(
@@ -73,27 +68,13 @@ class ConnectionScreen(
                             .weight(1f)
                             .verticalScroll(rememberScrollState()),
                 ) {
+                    GostBrandLockup()
+                    Spacer(Modifier.height(Spacing.xl))
                     SaaSScreenHeader(
                         superTitle = "SETUP",
-                        title = "GOST Desktop Setup",
+                        title = "Runtime Setup",
                         subtitle = "Configure your local GOST runtime",
-                        bottomSpacing = Spacing.xxxl,
-                        leading = {
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .size(ConnectionLayoutDimensions.logo)
-                                        .clip(CircleShape)
-                                        .background(SaASAction),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    "G",
-                                    color = sc.focusRing,
-                                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                                )
-                            }
-                        },
+                        bottomSpacing = Spacing.xxl,
                     )
 
                     // Binary Path

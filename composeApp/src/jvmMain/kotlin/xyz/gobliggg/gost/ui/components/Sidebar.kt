@@ -17,6 +17,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -35,6 +37,7 @@ data class SidebarItem(
     val label: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val badge: String? = null,
+    val brandConcept: BrandConcept? = null,
 )
 
 private object SidebarDimensions {
@@ -189,6 +192,12 @@ fun Sidebar(
                     )
                 }
 
+                BrandConceptIcon(
+                    concept = BrandConcept.Connection,
+                    modifier = Modifier.size(GostControlSize.iconLarge),
+                    tint = sc.textSecondary,
+                )
+                Spacer(Modifier.width(Spacing.sm))
                 // Compact engine state indicator.
                 SaaSCompactSwitch(checked = isEngineRunning)
             }
@@ -320,12 +329,21 @@ private fun SidebarNavItem(
                     ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                imageVector = item.icon,
-                contentDescription = item.label,
-                tint = textColor, // Icon matches text exactly per hover/active state
-                modifier = Modifier.size(GostControlSize.iconLarge),
-            )
+            if (item.brandConcept != null) {
+                BrandConceptIcon(
+                    concept = item.brandConcept,
+                    modifier = Modifier.size(GostControlSize.iconLarge)
+                        .semantics { contentDescription = item.label },
+                    tint = if (isSelected) null else textColor,
+                )
+            } else {
+                Icon(
+                    imageVector = item.icon,
+                    contentDescription = item.label,
+                    tint = textColor,
+                    modifier = Modifier.size(GostControlSize.iconLarge),
+                )
+            }
 
             if (!isCollapsed) {
                 Spacer(Modifier.width(Spacing.lg))

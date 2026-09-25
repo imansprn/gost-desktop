@@ -61,9 +61,9 @@ fun AppShell(
         remember {
             listOf(
                 SidebarItem("dashboard", "Dashboard", Icons.Default.BarChart),
-                SidebarItem("services", "Tunnels", Icons.Default.Router),
-                SidebarItem("chains", "Chains", Icons.Default.Link),
-                SidebarItem("authers", "Authers", Icons.Default.Shield),
+                SidebarItem("services", "Tunnels", Icons.Default.Router, brandConcept = BrandConcept.Tunnel),
+                SidebarItem("chains", "Chains", Icons.Default.Link, brandConcept = BrandConcept.Routing),
+                SidebarItem("authers", "Authers", Icons.Default.Shield, brandConcept = BrandConcept.Privacy),
                 SidebarItem("advanced", "Advanced", Icons.Default.Tune),
                 SidebarItem("logs", "Logs", Icons.Default.Terminal),
                 SidebarItem("config", "Config", Icons.Default.Code),
