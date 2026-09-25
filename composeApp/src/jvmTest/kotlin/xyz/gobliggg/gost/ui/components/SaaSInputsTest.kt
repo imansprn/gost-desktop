@@ -40,10 +40,38 @@ class SaaSInputsTest {
         assertEquals("alice", text)
     }
 
-    /*
     @Test
-    fun testDropdownFieldSelection() {
-        // ... test logic ...
+    fun testHandlerAndListenerDropdownSelection() {
+        var handler by mutableStateOf("http")
+        var listener by mutableStateOf("tcp")
+
+        composeTestRule.setContent {
+            GostTheme {
+                androidx.compose.foundation.layout.Column {
+                    DropdownField(
+                        value = handler,
+                        options = listOf("http", "socks5", "tcp"),
+                        onSelect = { handler = it },
+                        searchable = true,
+                        contentDescription = "Handler type",
+                    )
+                    DropdownField(
+                        value = listener,
+                        options = listOf("tcp", "tls", "grpc"),
+                        onSelect = { listener = it },
+                        searchable = true,
+                        contentDescription = "Listener type",
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Handler type").performClick()
+        composeTestRule.onNodeWithText("socks5").performClick()
+        assertEquals("socks5", handler)
+
+        composeTestRule.onNodeWithContentDescription("Listener type").performClick()
+        composeTestRule.onNodeWithText("tls").performClick()
+        assertEquals("tls", listener)
     }
-     */
 }

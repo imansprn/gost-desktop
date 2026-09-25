@@ -91,16 +91,7 @@ private fun DropdownFieldAnchor(
     val interactionSource = remember { MutableInteractionSource() }
 
     Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .then(
-                    if (contentDescription != null) {
-                        Modifier.semantics { this.contentDescription = contentDescription }
-                    } else {
-                        Modifier
-                    },
-                ).clickable(enabled = enabled) { onClick() },
+        modifier = Modifier.fillMaxWidth(),
     ) {
         if (label != null) {
             Text(
@@ -112,57 +103,82 @@ private fun DropdownFieldAnchor(
             Spacer(Modifier.height(Spacing.xs))
         }
 
-        BasicTextField(
-            value = display,
-            onValueChange = {},
+        Box(
             modifier = Modifier.fillMaxWidth().height(GostControlSize.standardHeight),
-            readOnly = true,
-            enabled = enabled,
-            singleLine = true,
-            interactionSource = interactionSource,
-            textStyle = MaterialTheme.typography.bodyMedium.copy(color = sc.textPrimary),
-            decorationBox = { innerTextField ->
-                TextFieldDefaults.DecorationBox(
-                    value = display,
-                    innerTextField = innerTextField,
-                    enabled = enabled,
-                    singleLine = true,
-                    visualTransformation = androidx.compose.ui.text.input.VisualTransformation.None,
-                    interactionSource = interactionSource,
-                    placeholder = {
-                        Text(
-                            text = placeholder,
-                            color = sc.textDisabled,
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    },
-                    trailingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = null,
-                            tint = sc.textMuted,
-                            modifier = Modifier.size(GostControlSize.iconLarge),
-                        )
-                    },
-                    container = {
-                        OutlinedTextFieldDefaults.Container(
+        ) {
+            BasicTextField(
+                value = display,
+                onValueChange = {},
+                modifier = Modifier.matchParentSize(),
+                readOnly = true,
+                enabled = enabled,
+                singleLine = true,
+                interactionSource = interactionSource,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = sc.textPrimary),
+                decorationBox = { innerTextField ->
+                    TextFieldDefaults.DecorationBox(
+                        value = display,
+                        innerTextField = innerTextField,
+                        enabled = enabled,
+                        singleLine = true,
+                        visualTransformation = androidx.compose.ui.text.input.VisualTransformation.None,
+                        interactionSource = interactionSource,
+                        placeholder = {
+                            Text(
+                                text = placeholder,
+                                color = sc.textDisabled,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        },
+                        trailingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = null,
+                                tint = sc.textMuted,
+                                modifier = Modifier.size(GostControlSize.iconLarge),
+                            )
+                        },
+                        container = {
+                            OutlinedTextFieldDefaults.Container(
+                                enabled = enabled,
+                                isError = false,
+                                interactionSource = interactionSource,
+                                colors = saasTextFieldColors(),
+                                shape =
+                                    androidx.compose.foundation.shape
+                                        .RoundedCornerShape(GostRadius.md),
+                                focusedBorderThickness = 1.dp,
+                                unfocusedBorderThickness = 1.dp,
+                            )
+                        },
+                        contentPadding =
+                            PaddingValues(
+                                horizontal = GostControlSize.fieldHorizontalPadding,
+                                vertical = 0.dp,
+                            ),
+                        colors = saasTextFieldColors(),
+                    )
+                },
+            )
+
+            Box(
+                modifier =
+                    Modifier
+                        .matchParentSize()
+                        .then(
+                            if (contentDescription != null) {
+                                Modifier.semantics { this.contentDescription = contentDescription }
+                            } else {
+                                Modifier
+                            },
+                        ).clickable(
                             enabled = enabled,
-                            isError = false,
                             interactionSource = interactionSource,
-                            colors = saasTextFieldColors(),
-                            shape =
-                                androidx.compose.foundation.shape
-                                    .RoundedCornerShape(GostRadius.md),
-                            focusedBorderThickness = 1.dp,
-                            unfocusedBorderThickness = 1.dp,
-                        )
-                    },
-                    contentPadding = PaddingValues(horizontal = GostControlSize.fieldHorizontalPadding, vertical = 0.dp),
-                    colors = saasTextFieldColors(),
-                )
-            },
-        )
+                            indication = null,
+                        ) { onClick() },
+            )
+        }
     }
 }

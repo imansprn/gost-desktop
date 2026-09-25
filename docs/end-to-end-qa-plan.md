@@ -57,6 +57,7 @@ Status: `Not Tested`, `Passed`, `Failed`, `Blocked`.
 | QA-TUN-011 | Delete | Confirmation enabled | Critical | confirmDeletes=true | IDLE + RUNNING | Tunnels | Delete/Cancel; Delete/Confirm | Cancel no-op; Confirm stops/removes once | Not Tested | Not Tested |
 | QA-TUN-012 | Delete | Confirmation disabled | High | confirmDeletes=false | Existing tunnel | Tunnels | Delete | No dialog; one deletion | Not Tested | Not Tested |
 | QA-TUN-013 | Search | Name/ID/address/error/no-match | Medium | Multiple tunnels | Mixed case queries | Tunnels | Search fields → clear → unmatched | Correct filter; recoverable no-result | Not Tested | Not Tested |
+| QA-TUN-014 | Protocol Selectors | Select Handler Type and Listener Type | Critical | Tunnel wizard open on Protocol step | Handler: socks5; Listener: tls | Tunnel Protocol | Click Handler Type → choose socks5 → verify displayed value; click Listener Type → choose tls → verify displayed value → Save → inspect/reopen config | Both selectors open from the full field area; selected values update immediately; `handler.type=socks5` and `listener.type=tls` are persisted and restored on edit | Compose dropdown selection + screen-model state/config tests passed | Passed |
 
 
 ## Process Lifecycle
