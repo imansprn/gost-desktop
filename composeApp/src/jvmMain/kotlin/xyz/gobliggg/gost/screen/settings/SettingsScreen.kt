@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
+import xyz.gobliggg.gost.AppVersion
 import xyz.gobliggg.gost.data.AppState
 import xyz.gobliggg.gost.model.AccentColor
 import xyz.gobliggg.gost.ui.components.*
@@ -162,7 +163,7 @@ class SettingsScreen : Screen {
                     modifier = Modifier.padding(vertical = Spacing.lg),
                     color = sc.borderSubtle,
                 )
-                SaaSInfoRow("App Version", "1.0.0")
+                SaaSInfoRow("App Version", AppVersion.VERSION)
                 SaaSInfoRow("Target GOST", "≥ 3.1.0")
                 SaaSInfoRow("Runtime", System.getProperty("java.version", "?"))
                 SaaSInfoRow("Platform", "${System.getProperty("os.name")} ${System.getProperty("os.arch")}")

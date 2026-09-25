@@ -22,6 +22,11 @@ fun normalizeMsiProductVersion(raw: String): String {
     return "$major.$minor.$build"
 }
 
+val rawAppVersion = (project.findProperty("appVersion") as? String)
+    ?.trim()
+    ?.takeIf { it.isNotEmpty() }
+    ?: "1.0.0"
+
 kotlin {
     jvm()
 
@@ -93,10 +98,6 @@ compose.desktop {
             packageName = "GOST Desktop"
             vendor = "gobliggg"
             // Allow CI/workflows to set version from git tag: -PappVersion=1.2.3
-            val rawAppVersion = (project.findProperty("appVersion") as? String)
-                ?.trim()
-                ?.takeIf { it.isNotEmpty() }
-                ?: "1.0.0"
             val distributionVersion = normalizeMsiProductVersion(rawAppVersion)
             packageVersion = distributionVersion
             linux {

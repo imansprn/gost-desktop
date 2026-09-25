@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import xyz.gobliggg.gost.AppVersion
 import xyz.gobliggg.gost.data.AppState
 import xyz.gobliggg.gost.ui.ShellFeedback
 import xyz.gobliggg.gost.ui.theme.*
@@ -81,7 +82,7 @@ fun AppShell(
                 isRuntimeValid = isRuntimeValid,
                 isEngineRunning = isEngineRunning,
                 engineTransition = engineTransition,
-                gostVersion = null,
+                gostVersion = AppVersion.VERSION,
                 onItemSelected = onNavigate,
                 onToggleCollapse = {
                     AppState.updateSettings { it.copy(sidebarCollapsed = !it.sidebarCollapsed) }
